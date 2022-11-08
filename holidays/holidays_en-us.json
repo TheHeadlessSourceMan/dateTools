@@ -1,0 +1,51 @@
+{
+	"St Patrick's Day":{
+		"match":"S(ain)?t Partick[']?s (Day)?",
+		"date":"mar 17"
+		},
+	"Halloween":{
+		"date":"Oct 31"
+		},
+	"Martin Luther King Day":{
+		"match":"(dr[.]?)? ((Martin Luther King('s)?)|(MLK('s)?)) (Jr's)? ((birth)?day)",
+		"date":"",
+		"dayOff":"national"
+		},
+	"Columbus Day":{
+		"date":"",
+		"dayOff":"bank"
+		},
+	"Vetran's Day":{
+		"match":"Vetran[']?s Day",
+		"date":"",
+		"dayOff":"national"
+		},
+	"Memorial Day":{
+		"date":"",
+		"dayOff":"national"
+		},
+	"Valentines Day":{
+		"match":"(st)? valentine[']?s day",
+		"date":"",
+		"dayOff":"national"
+		},
+	"Thanksgiving":{
+		"match":"thanksgiving (day)?",
+		"date":"Nov 24",
+		"dayOff":"national"
+		},
+	"Flag Day":{
+		"date":""
+		},
+	"Christmas Eve":{
+		"date":"Dec 24"
+		},
+	"Christmas Day":{
+		"date":"Dec 23",
+		"dayOff":"national"
+		},
+	"Easter":{
+		"date":"",
+		"dayOff":"bank"
+		}
+}
