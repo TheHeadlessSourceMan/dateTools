@@ -91,7 +91,7 @@ class LunarTimes:
 
     def phaseAngle(self,
         atDate:typing.Optional[datetime.date]=None
-        )->float:
+        )->typing.Optional[float]:
         """
         Get the lunar phase at a given date.
 

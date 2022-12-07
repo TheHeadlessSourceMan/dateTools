@@ -30,7 +30,7 @@ class Holiday(JsonSerializeable):
         self._name:str=name
         self._match:typing.Optional[typing.Pattern]=None
         self._matchre:typing.Optional[typing.Pattern]=None
-        self.match=match # forces re compile
+        self.match:typing.Optional[typing.Pattern]=match # forces re compile
         self.date=DateRange(date)
         self.dayOff:typing.Optional[str]=dayOff
         JsonSerializeable.__init__(self)

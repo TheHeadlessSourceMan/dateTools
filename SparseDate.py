@@ -11,7 +11,7 @@ import typing
 import datetime
 from dateTools.holidays import Holidays
 from timedelta import TimeDeltaCompatible
-
+from seasons._seasonsBase import ord
 
 class SparseDate:
     """
@@ -92,17 +92,17 @@ class SparseDate:
         """
         import re
         exceptions=''
-        counts=['other','first','1st','second','2nd','third','3rd',
-            'fourth','4th','fifth','5th','odd','even']
+        counts=['other','odd','even']
         named_days=['christmas','easter',r'(?:(?:bank\s+)|(?:(?:major\s+)?us\s+))?holiday']
         sep=r"""(?:\s|[,]|and)+"""
-        regex=['?:every',
+        regexParts=['?:every',
             '|'.join(counts),
+            ordinalIndicatorsRegexText,
             '('+self.getDayOfWeekRegexString()+'|'+'|'.join(named_days)+')(e?s)?',
             r"""(?P<day>\s+)?of\s+the\s+month""",
             r"""starting(?:\s+(?:at|on\s+))?\s+(.*?)"""
             ]
-        regex='('+(sep+')?\n(').join(regex)+')?\n'
+        regex='('+(sep+')?\n(').join(regexParts)+')?\n'
         #print(regex)
         regex=re.compile(regex,re.DOTALL|re.IGNORECASE)
         story=story.split('except')

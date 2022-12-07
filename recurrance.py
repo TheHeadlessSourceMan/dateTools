@@ -107,7 +107,9 @@ class Recurrance:
         # TODO: Next is not written
         return None
 
-    def previous(self,fromTime:typing.Optional[datetime.datetime])->TimeUnit:
+    def previous(self,
+        fromTime:typing.Optional[datetime.datetime]
+        )->typing.Optional[TimeUnit]:
         """
         Get the previous instance from a certain time(or from now)
 
@@ -121,3 +123,4 @@ class Recurrance:
         if fromTime is None:
             fromTime=datetime.datetime.now()
         # TODO: Previous is not written
+        return None

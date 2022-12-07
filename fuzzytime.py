@@ -30,8 +30,8 @@ class FuzzyTime:
             * the third saturday of october
             * the week before thanksgiving
         """
-        self.startTime:datetime.datetime=datetime.now()
-        self.endTime:datetime.datetime=datetime.now()
+        self.startTime:datetime=datetime.now()
+        self.endTime:datetime=datetime.now()
         if timestring is not None:
             self.assign(timestring)
 
