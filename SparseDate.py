@@ -10,8 +10,7 @@ Written by K.C. Eilander
 import typing
 import datetime
 from dateTools.holidays import Holidays
-from timedelta import TimeDeltaCompatible
-
+from dateTools import TimeDeltaCompatible
 
 class SparseDate:
     """

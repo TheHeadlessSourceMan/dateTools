@@ -194,7 +194,7 @@ class Holidays(JsonSerializeable):
     def nextHolidays(self,
         date:typing.Optional[datetime.date]=None,
         dayOff:typing.Optional[str]=None
-        )->typing.Generator[typing.Tuple[datetime.date,str]]:
+        )->typing.Generator[typing.Tuple[datetime.date,str],None,None]:
         """
         gets the next occourance of all holidays (in order)
 

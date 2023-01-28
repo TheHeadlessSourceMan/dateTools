@@ -8,8 +8,7 @@ Decode a time from within a freeform string, for example:
     * the week before thanksgiving
 """
 import typing
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime,timedelta
 
 
 class FuzzyTime:
@@ -36,14 +35,14 @@ class FuzzyTime:
             self.assign(timestring)
 
     @property
-    def timedelta(self)->datetime.timedelta:
+    def timedelta(self)->timedelta:
         """
         the time difference between start and end
         """
         return self.endTime-self.startTime
     @timedelta.setter
-    def timedelta(self,timedelta:datetime.timedelta):
-        self.assign(timedelta)
+    def timedelta(self,delta:timedelta):
+        self.assign(delta)
 
     def setTime(self,timestring:str)->None:
         """

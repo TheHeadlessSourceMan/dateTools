@@ -4,7 +4,7 @@ Units for time values, eg Day, Month, Year, etc
 import typing
 from abc import abstractmethod
 import datetime
-from dateTools import UnixTime, UnixTimeCompatible, When
+from dateTools import UnixTime, UnixTimeCompatible
 
 
 TimeUnitValueTypes=typing.Union[float,int,"TimeUnit",datetime.datetime,UnixTime]
@@ -28,6 +28,9 @@ class TimeUnit:
     NOTE: whenever the value is out-of-bounds, will clamp
         Year("Feb 29")+1 # not going to be a leap year, so will return Feb 28 when questioned
     """
+    if typing.TYPE_CHECKING:
+        from dateTools import When
+
     def __init__(self,
         subUnits:type,
         value:TimeUnitValueTypes,
@@ -47,9 +50,9 @@ class TimeUnit:
     def __iter__(self)->typing.Iterable["TimeUnit"]:
         return self.subUnits(self,self.concreteValue,self.conceptualValue)
 
-    def __add__(self,value:typing.Union[int,float])->When:
+    def __add__(self,value:typing.Union[int,float])->"When":
         return self.next(int(value))
-    def __sub__(self,value:typing.Union[int,float])->When:
+    def __sub__(self,value:typing.Union[int,float])->"When":
         return self.previous(int(value))
 
     def __gt__(self,other:TimeUnitValueTypes)->bool:
@@ -61,7 +64,7 @@ class TimeUnit:
             return self.value>other.value
         return self.value>other
 
-    def current(self)->When:
+    def current(self)->"When":
         """
         Time(s) of the current unit we are in
 
@@ -74,7 +77,7 @@ class TimeUnit:
         return self.next(0)
 
     @abstractmethod
-    def next(self,count:int=1)->When:
+    def next(self,count:int=1)->"When":
         """
         Time(s) of the next unit increment
 
@@ -85,7 +88,7 @@ class TimeUnit:
         :rtype: When
         """
 
-    def previous(self,count:int=1)->When:
+    def previous(self,count:int=1)->"When":
         """
         Time(s) of the previous unit increment
 
@@ -182,7 +185,7 @@ class Month(TimeUnit):
     def dateTime(self,dtime:datetime.datetime):
         self.concreteValue=dtime
 
-    def next(self,count:int=1)->When:
+    def next(self,count:int=1)->"When":
         """
         Time(s) of the next unit increment
 

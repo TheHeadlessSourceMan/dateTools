@@ -7,6 +7,7 @@ Also you can do interesting things like
 import typing
 import datetime
 
+_pythonDatetime=datetime.datetime
 
 UnixTimeCompatible=typing.Union["UnixTime",int,float,datetime.datetime]
 class UnixTime:
@@ -32,7 +33,7 @@ class UnixTime:
         """
         return datetime.datetime.fromtimestamp(self.value)
     @datetime.setter
-    def datetime(self,dt:datetime.datetime):
+    def datetime(self,dt:_pythonDatetime):
         self.value=dt.timestamp()
 
     def _toNumericValue(self,value:UnixTimeCompatible)->typing.Union[float,int]:

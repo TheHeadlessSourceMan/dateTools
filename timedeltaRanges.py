@@ -91,7 +91,7 @@ class TimeDeltaRange:
 
     def union(self,
         other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange",
-            typing.Iterable[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]]
+            typing.Iterable[typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]]]
         )->"TimeDeltaRange":
         """
         creates a new TimeDeltaRange that encomasses both this timedelta and other(s)

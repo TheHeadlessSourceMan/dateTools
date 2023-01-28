@@ -210,7 +210,7 @@ def timeDeltaInUnits(
 
 
 def toTimeDelta(
-    something:typing.Optional[datetime.timedelta,str]
+    something:typing.Union[None,datetime.timedelta,str]
     )->datetime.timedelta:
     """
     convert something to a timedelta

@@ -3,7 +3,7 @@ A general-purpose time recurrance (consider something like a standing meeting in
 """
 import typing
 import datetime
-from dateTools import TimeUnitValueTypes,TimeUnit,Month,When
+from dateTools import TimeUnitValueTypes,TimeUnit,Month
 
 
 class Recurrance:
@@ -12,6 +12,8 @@ class Recurrance:
 
     TODO: be able to export to ical
     """
+    if typing.TYPE_CHECKING:
+        from dateTools import When
 
     def __init__(self,timeUnit:TimeUnit=Month,
         indices:typing.Union[None,int,float,typing.Iterable[float]]=None,
@@ -41,7 +43,7 @@ class Recurrance:
 
     def between(self,
         start:typing.Optional[datetime.datetime]=None,
-        end:typing.Optional[datetime.datetime]=None)->typing.Generator[When,None,None]:
+        end:typing.Optional[datetime.datetime]=None)->typing.Generator["When",None,None]:
         """
         Return all occourances between the given dates
 
