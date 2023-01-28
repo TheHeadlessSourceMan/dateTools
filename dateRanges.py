@@ -9,7 +9,10 @@ import re
 from paths import URLCompatible
 from jsonSerializeable import JsonSerializeable
 import dateTools.miscFunctions as miscFunctions
+from .calendarNames import *
 
+
+RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 
 class DateRange(JsonSerializeable):
     """
@@ -22,14 +25,12 @@ class DateRange(JsonSerializeable):
     TODO: once Range class is working, extend that!
     """
 
-    DAYLIST=['su','mo','tu','we','th','fr','sa']
-    MONTHLIST=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
     DECODER:typing.Optional[typing.Pattern]=None
     def _CREATE_DECODER(self)->typing.Pattern:
-        weekdays='('+('|'.join(self.DAYLIST))+')[a-z]*'
-        months='('+('|'.join(self.MONTHLIST))+')[a-z]*'
+        weekdays='('+('|'.join(WeekdayAbbrs))+')[a-z]*'
+        months='('+('|'.join(MonthAbbrs))+')[a-z]*'
         time=r'[0-9]{1,2}:[0-9]{2}\s*(am|pm)?'
-        rangeIndicator=r'(-|to|till|until|through|\s)*'
+        rangeIndicator=RangeIndicatorReText+'?'
         monthday=miscFunctions.reWithoutNames(miscFunctions.numberDetectRe())
         regex=r"""
             (each|every|from|\s)*
@@ -52,6 +53,7 @@ class DateRange(JsonSerializeable):
             )?"""
         #print(regex)
         self.DECODER=re.compile(regex.replace('\n','').replace(' ',''),re.IGNORECASE)
+        return self.DECODER
 
     def __init__(self,
         rangestring:typing.Optional[str]=None,

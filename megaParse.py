@@ -14,6 +14,7 @@ import typing
 import datetime
 import re
 import dateTools
+from .ordinalIndicators import ordinalIndicators
 
 
 class Parser:
@@ -98,7 +99,8 @@ class Parser:
             return None
         if isinstance(s,bytes):
             s=s.decode('utf-8','ignore')
-        tokre=r"""(?P<alpha>[a-z]+)|(?P<numeric>(?P<number>[0-9]+)(?P<th>st|nd|rd|th)?)|(\s*?(?P<tok>[,.-/\s\\:|])\s*)""" # pylint: disable=line-too-long
+        th="""(?P<th>"""+('|'.join(ordinalIndicators[1:]))+""")?"""
+        tokre=r"""(?P<alpha>[a-z]+)|(?P<numeric>(?P<number>[0-9]+)"""+th+""")|(\s*?(?P<tok>[,.-/\s\\:|])\s*)""" # pylint: disable=line-too-long
         tokre=re.compile(tokre,re.IGNORECASE|re.DOTALL)
         tokenized=[] # the actual value of the entry
         identities=[] # identity codes for each entry
