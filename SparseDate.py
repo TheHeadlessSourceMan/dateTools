@@ -9,9 +9,6 @@ Written by K.C. Eilander
 """
 import typing
 import datetime
-from dateTools.holidays import Holidays
-from timedelta import TimeDeltaCompatible
-from seasons._seasonsBase import ord
 
 
 class SparseDate:
@@ -20,6 +17,9 @@ class SparseDate:
     allows skipping over certain weekdays, holidays, and
     user-specified days.
     """
+
+    if typing.TYPE_CHECKING:
+        from .timedelta import TimeDeltaCompatible
 
     def __init__(self,
         startDate:typing.Union[None,datetime.date,datetime.datetime]=None,
@@ -30,6 +30,7 @@ class SparseDate:
         :param skipWeekdays: each day in this list will be skipped
             (where 0=Monday and 6=Sunday) default=weekends.
         """
+        from dateTools.holidays import Holidays
         self.currentDate:typing.Optional[datetime.date]=None
         if skipWeekdays is None:
             skipWeekdays=[]
@@ -92,6 +93,7 @@ class SparseDate:
         TODO: this is currently experemental!
         """
         import re
+        from .seasons._seasonsBase import ordinalIndicatorsRegexText
         exceptions=''
         counts=['other','odd','even']
         named_days=['christmas','easter',r'(?:(?:bank\s+)|(?:(?:major\s+)?us\s+))?holiday']
@@ -147,7 +149,7 @@ class SparseDate:
         return int(self.currentDate)
 
     def __sub__(self,
-        somethingElse:TimeDeltaCompatible
+        somethingElse:"TimeDeltaCompatible"
         )->None:
         """
         subtraction operator
@@ -161,7 +163,7 @@ class SparseDate:
         return self.currentDate
 
     def __add__(self,
-        somethingElse:TimeDeltaCompatible
+        somethingElse:"TimeDeltaCompatible"
         )->None:
         """
         addition operator
@@ -172,7 +174,7 @@ class SparseDate:
         return self
 
     def __cmp__(self,
-        somethingElse:TimeDeltaCompatible
+        somethingElse:"TimeDeltaCompatible"
         )->int:
         """
         comparison operator
