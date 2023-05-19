@@ -14,6 +14,89 @@ from .calendarNames import *
 
 RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 
+DateRangeSimpleCompatible=typing.Union[datetime.datetime,typing.Tuple[datetime.datetime],"DateRangeSimple"]
+def asDateRangeSimple(dateRange:DateRangeSimpleCompatible)->"DateRangeSimple":
+    if isinstance(dateRange,DateRangeSimple):
+        return dateRange
+    return DateRangeSimple(dateRange)
+class DateRangeSimple:
+    """
+    TODO: merge with abstract Range and DateRange below
+    """
+
+    def __init__(self,dateRange:DateRangeSimpleCompatible):
+        self.start:datetime.datetime
+        self.end:datetime.datetime
+        self.assign(dateRange)
+
+    def __len__(self)->int:
+        return 2
+
+    def __iter__(self)->typing.Iterable[datetime.datetime]:
+        return [self.start,self.end]
+    
+    def __getitem__(self,idx:int)->datetime.datetime:
+        if idx==0:
+            return self.start
+        return self.end
+
+    def expand(self,dateRange:typing.Union[DateRangeSimpleCompatible,typing.Iterable[DateRangeSimpleCompatible]])->None:
+        if isinstance(dateRange,datetime.datetime):
+            if dateRange<self.start:
+                self.start=dateRange
+            elif dateRange>self.end:
+                self.end=dateRange
+            return
+        for dt in dateRange:
+            self.expand(dt)
+    
+    def assign(self,dateRange:DateRangeSimpleCompatible)->None:
+        if isinstance(dateRange,datetime.datetime):
+            dateRange=(dateRange,dateRange)
+        if dateRange[0]<dateRange[1]:
+            self.start=dateRange[0]
+            self.end=dateRange[1]
+        else:
+            self.start=dateRange[1]
+            self.end=dateRange[0]
+
+    def inside(self,dateRange:DateRangeSimpleCompatible)->bool:
+        """
+        Are we inside of another range?
+        """
+        dateRange=asDateRangeSimple(dateRange)
+        return dateRange.contains(self)
+    
+    def contains(self,dateRange:DateRangeSimpleCompatible)->bool:
+        """
+        Do we fully contain another range?
+        """
+        if isinstance(dateRange,datetime.datetime):
+            return dateRange>=self.start and dateRange<=self.end
+        dateRange=asDateRangeSimple(dateRange)
+        return self.contains(dateRange.start) and self.contains(dateRange.end)
+
+    def overlaps(self,dateRange:DateRangeSimpleCompatible)->bool:
+        """
+        Do we overlap with another range?
+        """
+        if isinstance(dateRange,datetime.datetime):
+            return self.contains(dateRange)
+        dateRange=asDateRangeSimple(dateRange)
+        # is their start inside our range?
+        if self.contains(dateRange.start):
+            return True
+        # is their end inside our range?
+        if self.contains(dateRange.end):
+            return True
+        # is our start inside their range? (in case we are entirely within their area)
+        if dateRange.contains(self.start):
+            return True
+        return False
+
+    def __repr__(self):
+        return f'{self.start} - {self.end}'
+
 class DateRange(JsonSerializeable):
     """
     This tool allows dates formatted like:
@@ -56,7 +139,7 @@ class DateRange(JsonSerializeable):
         return self.DECODER
 
     def __init__(self,
-        rangestring:typing.Optional[str]=None,
+        rangestring:typing.Union[None,str]=None,
         filename:typing.Optional[URLCompatible]=None,
         jsonObj:typing.Union[str,typing.Dict,None]=None):
         """ """
@@ -99,6 +182,10 @@ class DateRange(JsonSerializeable):
         """
         the starting time
         """
+        if self._time is None:
+            if self._toTime is None:
+                return datetime.datetime.now().time()
+            return self._toTime
         return self._time
     @time.setter
     def time(self,time:datetime.time):
