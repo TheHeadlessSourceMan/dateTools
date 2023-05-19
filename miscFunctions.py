@@ -5,7 +5,7 @@ contains misc helpful functions
 """
 import typing
 import datetime
-import fuzzytime
+import dateTools.fuzzytime
 
 
 # some handy constants
@@ -426,6 +426,7 @@ def numberDetectRe()->typing.Pattern:
 
     NOTE: limited to English numbers
     """
+    global _numberDetect
     if _numberDetect is None:
         import re
         nx=r"""\s*
