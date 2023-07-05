@@ -6,6 +6,7 @@ This tool allows dates formatted like "mon 8:00-8:30AM,tue-sat 1:00-5:00PM"
 import typing
 import datetime
 import re
+from rangeTools import Range
 from paths import URLCompatible
 from jsonSerializeable import JsonSerializeable
 import dateTools.miscFunctions as miscFunctions
@@ -14,88 +15,81 @@ from .calendarNames import *
 
 RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 
-DateRangeSimpleCompatible=typing.Union[datetime.datetime,typing.Tuple[datetime.datetime],"DateRangeSimple"]
+
+ComparableDatetimeCompatible=typing.Union[datetime.datetime,int,float,"ComparableDatetime"]
+ComparableDateTimeCompatible=ComparableDatetimeCompatible
+def asComparableDatetime(cdt:ComparableDatetimeCompatible)->"ComparableDatetime":
+    if isinstance(cdt,ComparableDatetime):
+        return cdt
+    return ComparableDatetime(cdt)
+asComparableDateTime=asComparableDatetime
+
+class ComparableDatetime:
+    def __init__(self,cdt:ComparableDatetimeCompatible):
+        if isinstance(cdt,(int,float)):
+            cdt=datetime.datetime.fromtimestamp(cdt)
+        elif isinstance(cdt,ComparableDatetime):
+            cdt=cdt.datetime
+        self.datetime:datetime.datetime=cdt
+
+    @property
+    def timestamp(self)->float:
+        return datetime.datetime.timestamp(self.datetime)
+    @timestamp.setter
+    def timestamp(self,timestamp:float):
+        self.datetime=datetime.datetime.fromtimestamp(timestamp)
+
+    def __sub__(self,other:typing.Any)->"ComparableDatetime":
+        return ComparableDatetime(self.timestamp-asComparableDatetime(other).timestamp)
+    def __add__(self,other:typing.Any)->"ComparableDatetime":
+        return ComparableDatetime(self.timestamp+asComparableDatetime(other).timestamp)
+    def __mul__(self,other:typing.Any)->"ComparableDatetime":
+        return ComparableDatetime(self.timestamp*asComparableDatetime(other).timestamp)
+    def __truediv__(self,other:typing.Any)->"ComparableDatetime":
+        return ComparableDatetime(self.timestamp/asComparableDatetime(other).timestamp)
+    def __floordiv__(self,other:typing.Any)->"ComparableDatetime":
+        return ComparableDatetime(self.timestamp//asComparableDatetime(other).timestamp)
+    def __lt__(self, other:typing.Any) -> bool:
+        return self.timestamp<asComparableDatetime(other).timestamp
+    def __gt__(self, other:typing.Any) -> bool:
+        return self.timestamp>asComparableDatetime(other).timestamp
+    def __le__(self, other:typing.Any) -> bool:
+        return self.timestamp<=asComparableDatetime(other).timestamp
+    def __ge__(self, other:typing.Any) -> bool:
+        return self.timestamp>=asComparableDatetime(other).timestamp
+    
+    def __repr__(self) -> str:
+        return str(self.datetime)
+ComparableDateTime=ComparableDatetime
+
+
+DateRangeSimpleCompatible=typing.Union[ComparableDatetime,typing.Tuple[ComparableDatetime,ComparableDatetime],"DateRangeSimple"]
 def asDateRangeSimple(dateRange:DateRangeSimpleCompatible)->"DateRangeSimple":
     if isinstance(dateRange,DateRangeSimple):
         return dateRange
+    if isinstance(dateRange,tuple):
+        return DateRangeSimple(dateRange[0],dateRange[1])
     return DateRangeSimple(dateRange)
-class DateRangeSimple:
+
+class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
     """
-    TODO: merge with abstract Range and DateRange below
+    TODO: merge with DateRange below
     """
 
-    def __init__(self,dateRange:DateRangeSimpleCompatible):
-        self.start:datetime.datetime
-        self.end:datetime.datetime
-        self.assign(dateRange)
-
-    def __len__(self)->int:
-        return 2
-
-    def __iter__(self)->typing.Iterable[datetime.datetime]:
-        return [self.start,self.end]
-    
-    def __getitem__(self,idx:int)->datetime.datetime:
-        if idx==0:
-            return self.start
-        return self.end
-
-    def expand(self,dateRange:typing.Union[DateRangeSimpleCompatible,typing.Iterable[DateRangeSimpleCompatible]])->None:
-        if isinstance(dateRange,datetime.datetime):
-            if dateRange<self.start:
-                self.start=dateRange
-            elif dateRange>self.end:
-                self.end=dateRange
-            return
-        for dt in dateRange:
-            self.expand(dt)
-    
-    def assign(self,dateRange:DateRangeSimpleCompatible)->None:
-        if isinstance(dateRange,datetime.datetime):
-            dateRange=(dateRange,dateRange)
-        if dateRange[0]<dateRange[1]:
-            self.start=dateRange[0]
-            self.end=dateRange[1]
-        else:
-            self.start=dateRange[1]
-            self.end=dateRange[0]
-
-    def inside(self,dateRange:DateRangeSimpleCompatible)->bool:
+    def __init__(self,
+        low:typing.Union[ComparableDatetimeCompatible,typing.Tuple[ComparableDatetimeCompatible,ComparableDatetimeCompatible]],
+        high:typing.Optional[ComparableDatetimeCompatible]=None,
+        step:typing.Optional[ComparableDatetimeCompatible]=None,
+        center:typing.Optional[ComparableDatetimeCompatible]=None,
+        lowInclusive:bool=True,
+        highInclusive:bool=False):
         """
-        Are we inside of another range?
+        :low: the low value of the range
+        :high: the high value of the range (if None, same as low)
+        :lowInclusive: is comparison >low or >=low
+        :highInclusive: is comparison <high or <=high
         """
-        dateRange=asDateRangeSimple(dateRange)
-        return dateRange.contains(self)
-    
-    def contains(self,dateRange:DateRangeSimpleCompatible)->bool:
-        """
-        Do we fully contain another range?
-        """
-        if isinstance(dateRange,datetime.datetime):
-            return dateRange>=self.start and dateRange<=self.end
-        dateRange=asDateRangeSimple(dateRange)
-        return self.contains(dateRange.start) and self.contains(dateRange.end)
-
-    def overlaps(self,dateRange:DateRangeSimpleCompatible)->bool:
-        """
-        Do we overlap with another range?
-        """
-        if isinstance(dateRange,datetime.datetime):
-            return self.contains(dateRange)
-        dateRange=asDateRangeSimple(dateRange)
-        # is their start inside our range?
-        if self.contains(dateRange.start):
-            return True
-        # is their end inside our range?
-        if self.contains(dateRange.end):
-            return True
-        # is our start inside their range? (in case we are entirely within their area)
-        if dateRange.contains(self.start):
-            return True
-        return False
-
-    def __repr__(self):
-        return f'{self.start} - {self.end}'
+        Range.__init__(self,low,high,step,center,lowInclusive,highInclusive,ComparableDatetime)
 
 class DateRange(JsonSerializeable):
     """
