@@ -9,6 +9,7 @@ import re
 from rangeTools import Range
 from paths import URLCompatible
 from jsonSerializeable import JsonSerializeable
+from rangeTools import Range,Ranges
 import dateTools.miscFunctions as miscFunctions
 from .calendarNames import *
 
@@ -57,7 +58,7 @@ class ComparableDatetime:
         return self.timestamp<=asComparableDatetime(other).timestamp
     def __ge__(self, other:typing.Any) -> bool:
         return self.timestamp>=asComparableDatetime(other).timestamp
-    
+
     def __repr__(self) -> str:
         return str(self.datetime)
 ComparableDateTime=ComparableDatetime
@@ -91,7 +92,7 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
         """
         Range.__init__(self,low,high,step,center,lowInclusive,highInclusive,ComparableDatetime)
 
-class DateRange(JsonSerializeable):
+class DateRange(JsonSerializeable,Range[datetime.datetime]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"
@@ -148,7 +149,9 @@ class DateRange(JsonSerializeable):
         self.toWeekday=None
         self._time=None
         self._toTime=None
+        self.timeFormat="%I:%M%p"
         JsonSerializeable.__init__(self,filename,jsonObj)
+        Range[datetime.datetime].__init__(self,rangestring)
         if rangestring is not None:
             self.assign(rangestring)
 
@@ -264,12 +267,12 @@ class DateRange(JsonSerializeable):
         # decode days
         weekday=m.group('weekday')
         if weekday is not None:
-            self.weekday=self.DAYLIST.index(weekday[0:2].lower())
+            self.weekday=WeekdayAbbrs.index(weekday[0:2].lower())
             toWeekday=m.group('toWeekday')
             if toWeekday is None:
                 self.toWeekday=self.weekday
             else:
-                self.toWeekday=self.DAYLIST.index(toWeekday[0:2].lower())
+                self.toWeekday=WeekdayAbbrs.index(toWeekday[0:2].lower())
         # decode times
         time=m.group('time')
         if time is not None:
@@ -342,13 +345,13 @@ class DateRange(JsonSerializeable):
         """
         name of the from weekday
         """
-        return self.DAYLIST[self.weekday]
+        return WeekdayAbbrs[self.weekday]
     @property
     def toWeekdayName(self)->str:
         """
         name of the to weekday
         """
-        return self.DAYLIST[self.toWeekday]
+        return WeekdayAbbrs[self.toWeekday]
 
     @property
     def monthName(self)->str:
@@ -372,17 +375,30 @@ class DateRange(JsonSerializeable):
         ret=[]
         ret.append(self.weekdayName)
         if self.weekday!=self.toWeekday:
-            ret.append('-')
+            ret.append('..')
             ret.append(self.toWeekdayName)
         ret.append(' ')
-        ret.append(str(self.time))
+        ret.append(self.time.strftime(self.timeFormat))
         if self.time!=self.toTime:
-            ret.append('-')
-            ret.append(str(self.toTime))
+            ret.append('..')
+            ret.append(self.toTime.strftime(self.timeFormat))
         return ''.join(ret)
     @text.setter
     def text(self,text:str):
         self.assign(text)
+
+    @property
+    def duration(self)->datetime.timedelta:
+        return self.end-self.start
+    @property
+    def hours(self)->float:
+        """
+        total duration as hours
+
+        :return: _description_
+        :rtype: float
+        """
+        return self.duration.total_seconds()/(60*60)
 
     def __repr__(self)->str:
         """
@@ -391,7 +407,7 @@ class DateRange(JsonSerializeable):
         return self.text
 DatetimeRange=DateRange
 
-class DateRanges(JsonSerializeable):
+class DateRanges(JsonSerializeable,Ranges):
     """
     A set of date range objects.
 
@@ -406,6 +422,7 @@ class DateRanges(JsonSerializeable):
         jsonObj:typing.Union[None,str,typing.Dict[str,typing.Any]]=None):
         """ """
         self.dateRanges:typing.List[DateRange]=[]
+        Ranges.__init__(self)
         JsonSerializeable.__init__(self,filename,jsonObj)
         if rangestring:
             self.assign(rangestring)

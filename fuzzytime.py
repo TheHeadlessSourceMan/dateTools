@@ -130,7 +130,7 @@ class FuzzyTime:
             other=datetime(other)
         return self.startTime!=other or self.endTime!=other
 
-    def __equ__(self,other:"FuzzyTime")->bool:
+    def __eq__(self,other:"FuzzyTime")->bool:
         """
         comparison operator
         """

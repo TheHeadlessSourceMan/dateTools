@@ -2,10 +2,12 @@
 Specify ranges in timedelta form, for example "3-5 days"
 """
 import typing
+import datetime
+from rangeTools import Range
 import dateTools
 
 
-class TimeDeltaRange:
+class TimeDeltaRange(Range[datetime.timedelta]):
     """
     Specify ranges in timedelta form, for example "3-5 days"
 
