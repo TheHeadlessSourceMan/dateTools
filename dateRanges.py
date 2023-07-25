@@ -133,7 +133,7 @@ class DateRange(JsonSerializeable):
         return self.DECODER
 
     def __init__(self,
-        rangestring:typing.Union[None,str]=None,
+        dateRange:typing.Union[None,str,"DateRange",datetime.datetime,typing.Tuple[datetime.datetime,datetime.datetime]]=None,
         filename:typing.Optional[URLCompatible]=None,
         jsonObj:typing.Union[str,typing.Dict,None]=None):
         """ """
@@ -149,8 +149,8 @@ class DateRange(JsonSerializeable):
         self._time=None
         self._toTime=None
         JsonSerializeable.__init__(self,filename,jsonObj)
-        if rangestring is not None:
-            self.assign(rangestring)
+        if dateRange is not None:
+            self.assign(dateRange)
 
     def clear(self)->None:
         """
@@ -237,10 +237,23 @@ class DateRange(JsonSerializeable):
             else:
                 raise Exception('unknown field "%s"'%k)
 
-    def assign(self,rangestring:str)->None:
+    def assign(self,dateRange:typing.Union[None,str,"DateRange",datetime.datetime,typing.Tuple[datetime.datetime,datetime.datetime]])->None:
         """
         assign the value of this date range
         """
+        if dateRange is None:
+            self.reset()
+            return
+        if isinstance(dateRange,str):
+            self._assignRangeString(dateRange)
+            return
+        if isinstance(dateRange,datetime.datetime):
+            dateRange=(dateRange,dateRange)
+        self.reset()
+        self.fromTime=dateRange[0]
+        self.toTime=dateRange[1]
+
+    def _assignRangeString(self,rangestring:str)->None:
         self.reset()
         m=self.DECODER.match(rangestring)
         if m is None:
@@ -279,6 +292,51 @@ class DateRange(JsonSerializeable):
                 self.toTime=time
             else:
                 self.toTime=toTime
+
+    def iterateDays(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full day of every
+        day in this range
+        """
+        from dateTools.commonDateRanges import dayRange,dayAfter
+        d=dayRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=dayAfter(d)
+            yield d
+    def iterateWeeks(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full week of every
+        week in this range
+        """
+        from dateTools.commonDateRanges import weekRange,weekAfter
+        d=weekRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=weekAfter(d)
+            yield d
+    def iterateMonths(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full month of every
+        month in this range
+        """
+        from dateTools.commonDateRanges import monthRange,monthAfter
+        d=monthRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=monthAfter(d)
+            yield d
+    def iterateYears(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full year of every
+        year in this range
+        """
+        from dateTools.commonDateRanges import yearRange,yearAfter
+        d=yearRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=yearAfter(d)
+            yield d
 
     def next(self,
         afterDate:typing.Optional[datetime.date]=None

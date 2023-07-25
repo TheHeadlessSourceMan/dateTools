@@ -2,6 +2,7 @@
 Specify ranges in timedelta form, for example "3-5 days"
 """
 import typing
+from collections.abc import Iterable
 import dateTools
 
 
@@ -103,7 +104,7 @@ class TimeDeltaRange:
         """
         ret=None
         if not isinstance(other,TimeDeltaRange):
-            if hasattr(other,'__iter__'):
+            if isinstance(other,Iterable):
                 # it is iterable, so loop through each item and build it up
                 it=other
                 other=self

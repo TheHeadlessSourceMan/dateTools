@@ -166,11 +166,11 @@ def toTime(
             something=datetime.datetime.strptime(something,'%H:%M').time()
     elif hasattr(something,'time'): # also handles datetime objects
         something=something.time
-        if hasattr(something,'__call__'):
+        if callable(something):
             something=something()
     elif hasattr(something,'datetime'):
         something=something.datetime
-        if hasattr(something,'__call__'):
+        if callable(something):
             something=something()
         something=something.time()
     else:
