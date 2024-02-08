@@ -1,4 +1,7 @@
 
+"""
+Manage and (schedule sets) of alarm timers
+"""
 import typing
 import bisect
 import datetime
@@ -74,6 +77,10 @@ class Alarm(FunctionCall):
 
     @property
     def time(self)->typing.Optional[datetime.datetime]:
+        """
+        Get the current alarm timestamp
+        (can be None)
+        """
         return self._time
 
     def __float__(self)->float:
@@ -174,7 +181,7 @@ class Alarm(FunctionCall):
 class PeriodicAlarm(Alarm):
     """
     an alarm that fires periodically.
-    
+
     can have a start and end bound, which will limit
     the alarm to a certian active period
     """
@@ -188,9 +195,9 @@ class PeriodicAlarm(Alarm):
         ending:typing.Optional[datetime.datetime]=None):
         """
         :time: alarm will occour every this much time
-        :starting: timeout periods will always be based on this (default is now)
-        :ending: any alarms past this will not be called and the alarm itself will
-             be considered expired
+        :starting: timeout periods will always be based on this (default = now)
+        :ending: any alarms past this will not be called and the alarm itself
+            will be considered expired
         """
         Alarm.__init__(self,typing.cast(datetime.datetime,None),fn,args,kwargs)
         if starting is None:
@@ -202,9 +209,15 @@ class PeriodicAlarm(Alarm):
 
     @property
     def starting(self)->datetime.datetime:
+        """
+        the starting timestamp of the alarm
+        """
         return self._starting
     @property
     def ending(self)->typing.Optional[datetime.datetime]:
+        """
+        the ending timestamp of the alarm
+        """
         return self._ending
 
     @property
@@ -229,6 +242,10 @@ class PeriodicAlarm(Alarm):
 
     @property
     def nextAlarm(self)->typing.Optional[Alarm]:
+        """
+        Get the next occourance of this alarm
+        (Can be None if it will never expire again)
+        """
         self._current=None
         return self.current
 
@@ -257,10 +274,10 @@ class PeriodicAlarm(Alarm):
         else:
             end=str(self.ending)
         if self.current is None:
-            next="Never"
+            nextOccourance="Never"
         else:
-            next=str(self.current.time)
-        return f"every {self._timeout} between {self.starting}-{end} (next={next}) "+FunctionCall.__repr__(self)
+            nextOccourance=str(self.current.time)
+        return f"every {self._timeout} between {self.starting}-{end} (next={nextOccourance}) "+FunctionCall.__repr__(self) # noqa: E501 # pylint: disable=line-too-long
 
 
 class AlarmSet:
@@ -308,7 +325,9 @@ class AlarmSet:
     def __iter__(self)->typing.Iterable[Alarm]:
         return self.all
 
-    def nextAlarm(self,fromTime:typing.Optional[datetime.datetime]=None)->typing.Optional[Alarm]:
+    def nextAlarm(self,
+        fromTime:typing.Optional[datetime.datetime]=None
+        )->typing.Optional[Alarm]:
         """
         get the next alarm (optionally, on or after a given time)
         """
@@ -318,7 +337,9 @@ class AlarmSet:
             return None
         return self._active[0]
 
-    def previousAlarm(self,fromTime:typing.Optional[datetime.datetime]=None)->typing.Optional[Alarm]:
+    def previousAlarm(self,
+        fromTime:typing.Optional[datetime.datetime]=None
+        )->typing.Optional[Alarm]:
         """
         get the last/previous alarm (optionally, on or after a given time)
         """
@@ -333,15 +354,18 @@ class AlarmSet:
         timeOrAlarm:AlarmTimeoutCompatible,
         fn:typing.Callable,
         args:typing.Optional[typing.Iterable[typing.Any]]=None,
-        kwargs:typing.Optional[typing.Dict[str,typing.Any]]=None)->None: ...
+        kwargs:typing.Optional[typing.Dict[str,typing.Any]]=None)->None:
+        ...
     @typing.overload
     def add(self,
         timeOrAlarm:typing.Union[None,Alarm,typing.Iterable[Alarm]],
         fn:None=None,
         args:None=None,
-        kwargs:None=None)->None: ...
+        kwargs:None=None)->None:
+        ...
     def add(self,
-        timeOrAlarm:typing.Union[None,Alarm,typing.Iterable[Alarm],AlarmTimeoutCompatible],
+        timeOrAlarm:typing.Union[
+            None,Alarm,typing.Iterable[Alarm],AlarmTimeoutCompatible],
         fn:typing.Optional[typing.Callable]=None,
         args:typing.Optional[typing.Iterable[typing.Any]]=None,
         kwargs:typing.Optional[typing.Dict[str,typing.Any]]=None)->None:
@@ -350,19 +374,23 @@ class AlarmSet:
             if it's one or more Alarm(s), simply add it/them
             if the time is an absolute time, create an alarm to use it as-is
             if it is a relative time, create an alarm with that offset from now
-        :fn: if timeOrAlarm is a time, this is the function that the created alarm will call
-        :args: if timeOrAlarm is a time, these are the parameters to be passed to fn()
-        :kwargs: if timeOrAlarm is a time, these are the keyword parameters to be passed to fn()
+        :fn: if timeOrAlarm is a time, this is the function that the
+            created alarm will call
+        :args: if timeOrAlarm is a time, these are the parameters to be
+            passed to fn()
+        :kwargs: if timeOrAlarm is a time, these are the keyword parameters
+            to be passed to fn()
 
-        Attempting to add an alarm whose time has already elapsed will simply add it
-        to the appropriate time in the expired list.
+        Attempting to add an alarm whose time has already elapsed will
+        simply add it to the appropriate time in the expired list.
         """
         if timeOrAlarm is None:
-            return 
+            return
         if isinstance(timeOrAlarm,Alarm):
             alarms:typing.Iterable[Alarm]=(timeOrAlarm,)
         elif isinstance(timeOrAlarm,(datetime.datetime,datetime.timedelta)):
-            alarms=(Alarm(timeOrAlarm,typing.cast(typing.Callable,fn),args,kwargs),)
+            alarms=(Alarm(
+                timeOrAlarm,typing.cast(typing.Callable,fn),args,kwargs),)
         else:
             alarms=timeOrAlarm
         for alarm in alarms:
@@ -372,7 +400,7 @@ class AlarmSet:
                 newFirstAlarm:bool = not self._active or alarm<self._active[0]
                 bisect.insort(self._active,alarm)
                 if newFirstAlarm:
-                    self._interrupt() # interrupt waiting on the current _current and wait on the one that it changed to instead
+                    self._interrupt() # interrupt waiting on the current _current and wait on the one that it changed to instead # noqa: E501 # pylint: disable=line-too-long
     append=add
     extend=add
 
@@ -387,7 +415,8 @@ class AlarmSet:
         """
         self._stopWhenNoAlarmsActive=stopWhenNoAlarmsActive
         if self._thread is None:
-            self._thread=threading.Thread(target=self.run,args=[stopWhenNoAlarmsActive])
+            self._thread=threading.Thread(
+                target=self.run,args=[stopWhenNoAlarmsActive])
     def _interrupt(self):
         """
         cause the thread to interrupt any waits
@@ -408,7 +437,7 @@ class AlarmSet:
         """
         Main thread loop
 
-        (Usually you don't want to call this, but rather call start() 
+        (Usually you don't want to call this, but rather call start()
         to run it in another thread instead)
         """
         #print('started')
@@ -426,7 +455,7 @@ class AlarmSet:
                 self._threadInterruptEvent.wait(1)
                 continue
             if self._active[0].time:
-                t:float=(self._active[0].time-datetime.datetime.now()).total_seconds()
+                t:float=(self._active[0].time-datetime.datetime.now()).total_seconds() # noqa: E501 # pylint: disable=line-too-long
             else:
                 t=0.05
             #print('sleeping for',t)
@@ -455,9 +484,9 @@ class AlarmSet:
             alarm() # call it!
             del self._active[0]
             if hasattr(alarm,'nextAlarm'):
-                next=alarm.nextAlarm
-                if next:
-                    # we already removed and so now re-add periodic 
+                nextOccourance=alarm.nextAlarm
+                if nextOccourance:
+                    # we already removed and so now re-add periodic
                     # alarm to keep it in sorted order
                     self._active.append(alarm)
                 else:
@@ -479,8 +508,16 @@ def test_expired():
     aset=AlarmSet()
     aset.add(datetime.timedelta(seconds=-1),print,("Alarm 1 expired.",))
     aset.add(datetime.timedelta(seconds=3),print,("Alarm 2 ative.",))
-    aset.add(PeriodicAlarm(datetime.timedelta(seconds=4),print,("Alarm 3 expired.",),end=datetime.datetime.fromtimestamp(100)))
-    aset.add(PeriodicAlarm(datetime.timedelta(seconds=4),print,("Alarm 4 active.",)))
+    aset.add(PeriodicAlarm(
+        datetime.timedelta(seconds=4),
+        print,
+        ("Alarm 3 expired.",),
+        ending=datetime.datetime.fromtimestamp(100)
+        ))
+    aset.add(PeriodicAlarm(
+        datetime.timedelta(seconds=4),
+        print,
+        ("Alarm 4 active.",)))
     print('Expired:')
     print('\n'.join([str(x) for x in aset.expired]))
     print('Active:')
@@ -494,7 +531,8 @@ def test_ordering():
     aset.add(datetime.timedelta(seconds=5),print,("Alarm 1 fired.",))
     aset.add(datetime.timedelta(seconds=3),print,("Alarm 2 fired.",))
     aset.add(Alarm(datetime.timedelta(seconds=4),print,("Alarm 3 fired.",)))
-    aset.add(PeriodicAlarm(datetime.timedelta(seconds=4),print,("Alarm 4 fired.",)))
+    aset.add(PeriodicAlarm(
+        datetime.timedelta(seconds=4),print,("Alarm 4 fired.",)))
     print(aset)
 
 def test_running():
@@ -510,10 +548,14 @@ def test_running():
     aset.add(datetime.timedelta(seconds=5),fn,("Alarm 1 fired.",))
     aset.add(datetime.timedelta(seconds=3),fn,("Alarm 2 fired.",))
     aset.add(Alarm(datetime.timedelta(seconds=4),fn,("Alarm 3 fired.",)))
-    aset.add(PeriodicAlarm(datetime.timedelta(seconds=1),fn,("Alarm 4 fired.",)))
+    aset.add(PeriodicAlarm(
+        datetime.timedelta(seconds=1),fn,("Alarm 4 fired.",)))
     aset.run()
 
 def test():
+    """
+    Run unit tests
+    """
     test_ordering()
     test_expired()
     test_running()

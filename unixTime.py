@@ -1,5 +1,6 @@
 """
-A wrapper around a unix time... basically so it doesn't get confused with any old number
+A wrapper around a unix time... basically so it doesn't get confused
+with any old number
 
 Also you can do interesting things like
     UnixTime(datetime.now())+3000
@@ -12,7 +13,8 @@ _pythonDatetime=datetime.datetime
 UnixTimeCompatible=typing.Union["UnixTime",int,float,datetime.datetime]
 class UnixTime:
     """
-    A wrapper around a unix time... basically so it doesn't get confused with any old number
+    A wrapper around a unix time... basically so it doesn't get confused
+    with any old number
 
     Also you can do interesting things like
         UnixTime(datetime.now())+3000
@@ -36,7 +38,8 @@ class UnixTime:
     def datetime(self,dt:_pythonDatetime):
         self.value=dt.timestamp()
 
-    def _toNumericValue(self,value:UnixTimeCompatible)->typing.Union[float,int]:
+    def _toNumericValue(self,value:UnixTimeCompatible
+        )->typing.Union[float,int]:
         if isinstance(value,(int,float)):
             return value
         if isinstance(value,UnixTime):

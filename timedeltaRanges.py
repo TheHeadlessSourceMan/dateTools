@@ -10,19 +10,22 @@ class TimeDeltaRange:
     """
     Specify ranges in timedelta form, for example "3-5 days"
 
-    TODO: is there a more general-purpose Range tha this could cross-pollenate with
+    TODO: is there a more general-purpose Range that this
+        could cross-pollenate with
     """
 
     def __init__(self,
         minimum:dateTools.TimeDeltaCompatible,
         maximum:typing.Optional[dateTools.TimeDeltaCompatible]=None,
-        center:typing.Union[None,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]=None):
+        center:typing.Union[
+            None,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]=None):
         """ """
         self.minimum:dateTools.TimeDelta=dateTools.TimeDelta(minimum)
         self.maximum:dateTools.TimeDelta=self.minimum
         if maximum is not None:
             self.maximum=dateTools.TimeDelta(maximum)
-        self._center:typing.Union[None,dateTools.TimeDelta,"TimeDeltaRange"]=None
+        self._center:typing.Union[
+            None,dateTools.TimeDelta,"TimeDeltaRange"]=None
         self.center=center
 
     def copy(self)->"TimeDeltaRange":
@@ -58,15 +61,22 @@ class TimeDeltaRange:
             return self._center
         return (self.maximum-self.minimum)/2
     @center.setter
-    def center(self,center:typing.Union[None,dateTools.TimeDeltaCompatible,"TimeDeltaRange"])->None:
+    def center(self,
+        center:typing.Union[
+            None,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
+        )->None:
+        """ """
         if center is None or isinstance(center,TimeDeltaRange):
             self._center=center
         else:
             self._center=dateTools.TimeDelta(center)
 
-    def contains(self,other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"])->bool:
+    def contains(self,
+        other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
+        )->bool:
         """
-        determinimume if this contains a timedelta or entirely contains another range
+        determinimume if this contains a timedelta or entirely contains
+        another range
 
         Useful for things like determinimuming if a specified incident will
         occour during this operation
@@ -79,7 +89,9 @@ class TimeDeltaRange:
         other=dateTools.asTimeDelta(other)
         return other>=self.minimum and other<=self.maximum
 
-    def containedBy(self,other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"])->bool:
+    def containedBy(self,
+        other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
+        )->bool:
         """
         determinimume if this is contained by another a TimeDeltaRange
 
@@ -92,10 +104,13 @@ class TimeDeltaRange:
 
     def union(self,
         other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange",
-            typing.Iterable[typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]]]
+            typing.Iterable[
+                typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
+            ]]
         )->"TimeDeltaRange":
         """
-        creates a new TimeDeltaRange that encomasses both this timedelta and other(s)
+        creates a new TimeDeltaRange that encomasses both this timedelta
+        and other(s)
 
         Example:
             TimeDeltaRange(1day,3day).intersection(TimeDeltaRange(2day,5day))
@@ -116,7 +131,7 @@ class TimeDeltaRange:
         newminimum=min(other.minimum,self.minimum)
         newmaximum=max(other.maximum,self.maximum)
         ret=TimeDeltaRange(newminimum,newmaximum)
-        if self._center is not None or other._center is not None: # pylint: disable=protected-access
+        if self._center is not None or other._center is not None: # noqa: E501 # pylint: disable=protected-access
             ret.center=(self.center+other.center)/2
         return ret
 
@@ -124,7 +139,8 @@ class TimeDeltaRange:
         other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
         )->typing.Optional["TimeDeltaRange"]:
         """
-        creates a new TimeDeltaRange that fulfils both the range of this item and another
+        creates a new TimeDeltaRange that fulfils both the range
+        of this item and another
 
         Example:
             TimeDeltaRange(1day,3day).intersection(TimeDeltaRange(2day,5day))
@@ -142,11 +158,11 @@ class TimeDeltaRange:
         newmaximum=min(other.maximum,self.maximum)
         if newminimum<=newmaximum:
             ret=TimeDeltaRange(newminimum,newmaximum)
-            if self._center is not None or other._center is not None: # pylint: disable=protected-access
+            if self._center is not None or other._center is not None: # noqa: E501 # pylint: disable=protected-access
                 if self._center is not None:
                     cent=self._center
-                    if other._center is not None: # pylint: disable=protected-access
-                        cent=(cent+other._center)/2 # pylint: disable=protected-access
+                    if other._center is not None: # noqa: E501 # pylint: disable=protected-access
+                        cent=(cent+other._center)/2 # noqa: E501 # pylint: disable=protected-access
                 else:
                     cent=other._center # pylint: disable=protected-access
                 if cent>=newminimum and cent<=newmaximum:
@@ -159,8 +175,8 @@ class TimeDeltaRange:
         """
         determinimume how far a value is from the center
 
-        Useful for things like determinimuming how close a specified incident is
-        to the ideal.
+        Useful for things like determinimuming how close a specified
+        incident is to the ideal.
 
         Examples:
             TimeDeltaRange(1day,3day,2.5day).centerDelta(2day)
@@ -176,10 +192,13 @@ class TimeDeltaRange:
         other:typing.Union[dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
         )->typing.Optional[float]:
         """
-        determinimume if this exactly equals, is greater than, or less than another
+        determinimume if this exactly equals, is greater than, or less than
+        another
 
         NOTE: returns None when not equal, yet < and > are indeterminimumate
-            Eg TimeDeltaRange(1day,3day)>TimeDeltaRange(2day,5day) is indeterminimumate
+            Eg:
+            TimeDeltaRange(1day,3day)>TimeDeltaRange(2day,5day)
+            is indeterminimumate
         """
         ret=None
         if isinstance(other,TimeDeltaRange):
@@ -222,7 +241,8 @@ class TimeDeltaRange:
             self.center=(self.center+other.center)/2
 
     def __div__(self,
-        other:typing.Union[float,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
+        other:typing.Union[
+            float,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]
         )->None:
         """
         multiply/divide by a scalar results in a timedelta,

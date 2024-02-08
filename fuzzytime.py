@@ -23,7 +23,8 @@ class FuzzyTime:
     def __init__(self,
         timestring:typing.Optional[str]=None):
         """
-        This is fairly minimal for now, but it could be expanded to read things like:
+        This is fairly minimal for now, but it
+        could be expanded to read things like:
             * 5 days ago
             * within the last 48 hours
             * the third saturday of october
@@ -80,12 +81,15 @@ class FuzzyTime:
             elif token in ('mt','mth','month'):
                 self.startTime=datetime.now()
                 self.endTime=datetime.now()
-                self.endTime=self.endTime.replace(year=int((self.endTime.month+lastNumeric)/12))
-                self.endTime=self.endTime.replace(month=(self.endTime.month+lastNumeric)%12)
+                self.endTime=self.endTime.replace(
+                    year=int((self.endTime.month+lastNumeric)/12))
+                self.endTime=self.endTime.replace(
+                    month=(self.endTime.month+lastNumeric)%12)
             elif token in ('yr','year'):
                 self.startTime=datetime.now()
                 self.endTime=datetime.now()
-                self.endTime=self.endTime.replace(year=self.endTime.year+lastNumeric)
+                self.endTime=self.endTime.replace(
+                    year=self.endTime.year+lastNumeric)
 
     def _tokenize(self,timestring:str)->typing.Iterable[str]:
         """
@@ -125,7 +129,8 @@ class FuzzyTime:
         if isinstance(other,str):
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
-            return self.startTime!=other.startTime or self.endTime!=other.endTime
+            return self.startTime!=other.startTime \
+                or self.endTime!=other.endTime
         if not isinstance(other,datetime):
             other=datetime(other)
         return self.startTime!=other or self.endTime!=other
@@ -137,7 +142,8 @@ class FuzzyTime:
         if isinstance(other,str):
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
-            return self.startTime==other.startTime and self.endTime==other.endTime
+            return self.startTime==other.startTime \
+                and self.endTime==other.endTime
         if not isinstance(other,datetime):
             other=datetime(other)
         return self.startTime<=other<=self.endTime
@@ -161,7 +167,8 @@ class FuzzyTime:
         if isinstance(other,str):
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
-            return self.startTime<=other.startTime or self.endTime<=other.endTime
+            return self.startTime<=other.startTime \
+                or self.endTime<=other.endTime
         if not isinstance(other,datetime):
             other=datetime(other)
         return self.startTime<=other
@@ -185,7 +192,8 @@ class FuzzyTime:
         if isinstance(other,str):
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
-            return self.startTime>=other.startTime or self.endTime>=other.endTime
+            return self.startTime>=other.startTime \
+                or self.endTime>=other.endTime
         if not isinstance(other,datetime):
             other=datetime(other)
         return self.startTime>=other
@@ -197,7 +205,8 @@ class FuzzyTime:
         if isinstance(other,str):
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
-            return self.startTime>=other.startTime or self.endTime>=other.endTime
+            return self.startTime>=other.startTime \
+                or self.endTime>=other.endTime
         if not isinstance(other,datetime):
             other=datetime(other)
         return self.startTime>=other>=self.endTime

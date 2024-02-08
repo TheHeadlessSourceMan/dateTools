@@ -6,7 +6,8 @@ import typing
 import datetime
 
 
-def age(d:typing.Union[datetime.timedelta,datetime.datetime])->datetime.timedelta:
+def age(d:typing.Union[datetime.timedelta,datetime.datetime]
+    )->datetime.timedelta:
     """
     get the age of another date relative to now
     (if a timedelta is passed in, return it unchanged)

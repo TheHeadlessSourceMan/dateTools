@@ -67,7 +67,9 @@ class SparseDate:
 
     def getDayOfWeekRegexString(self)->str:
         """
-        returns a regex string that will get all weekdays or abbreviations and return
+        returns a regex string that will get all weekdays or abbreviations 
+        and return
+        
         group(1)=full name of week day
 
         It is recommended you use this with re.IGNORECASE.
@@ -182,12 +184,14 @@ class SparseDate:
         numDays=0
         somethingElse=int(somethingElse)
         if somethingElse>self.currentDate:
-            inc=SparseDate(self.currentDate,self.skipWeekdays,self.daysOff,self.holidays)
+            inc=SparseDate(
+                self.currentDate,self.skipWeekdays,self.daysOff,self.holidays)
             while inc.currentDate<somethingElse:
                 inc=inc+1
                 numDays=numDays-1
         elif somethingElse<self.currentDate:
-            inc=SparseDate(somethingElse,self.skipWeekdays,self.daysOff,self.holidays)
+            inc=SparseDate(
+                somethingElse,self.skipWeekdays,self.daysOff,self.holidays)
             while inc.currentDate<self.currentDate:
                 inc=inc+1
                 numDays=numDays+1

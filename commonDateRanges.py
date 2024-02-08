@@ -25,8 +25,12 @@ def yearRange(
         toYear=fromYear
     elif isinstance(fromYear,datetime.datetime):
         fromYear=fromYear.year
-    return DateRange(datetime.datetime(fromYear,1,1,0,0,0),datetime.datetime(toYear,12,31,23,59,59))
-def yearBefore(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+    return DateRange(
+        datetime.datetime(fromYear,1,1,0,0,0),
+        datetime.datetime(toYear,12,31,23,59,59))
+def yearBefore(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire year before a given date
     """
@@ -52,7 +56,9 @@ def nextYear()->DateRange:
     return a range representing the entire next year
     """
     return yearRange(datetime.datetime.now().year+1)
-def yearAfter(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+def yearAfter(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire year after a given date
     """
@@ -69,7 +75,7 @@ def monthRange(
     toMonth:typing.Union[int,None,datetime.datetime]=None)->DateRange:
     """
     Get a range representing the entire month(s) for the date(s)
-    That is fromMonth=(date_in_july,date_in_august), the range will be july1-aug31.
+    Eg: fromMonth=(date_in_july,date_in_august), the range will be july1-aug31.
 
     :fromMonth: if not specified, use this month
     :toMonth: if not specified, use fromMonth
@@ -91,8 +97,12 @@ def monthRange(
         toMonth=fromMonth.month
     else:
         toYear=fromYear
-    return DateRange((datetime.datetime(fromYear,fromMonth,1,0,0,0),datetime.datetime(toYear,toMonth,31,23,59,59)))
-def monthBefore(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+    return DateRange((
+        datetime.datetime(fromYear,fromMonth,1,0,0,0),
+        datetime.datetime(toYear,toMonth,31,23,59,59)))
+def monthBefore(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire month before a given date
     """
@@ -118,7 +128,9 @@ def nextMonth()->DateRange:
     return a range representing the entire next month
     """
     return monthRange(datetime.datetime.now()+datetime.timedelta(days=31))
-def monthAfter(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+def monthAfter(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire month after a given date
     """
@@ -142,7 +154,8 @@ def _datetimeOfWeekNumber(weekNum:int,year:typing.Optional[int]=None):
     if year is None:
         year=datetime.datetime.now().year
     firstDayOfYear=datetime.datetime(year,1,1)
-    return firstDayOfYear+datetime.timedelta(weeks=weekNum-1,days=-firstDayOfYear.weekday())
+    return firstDayOfYear+datetime.timedelta(
+        weeks=weekNum-1,days=-firstDayOfYear.weekday())
 def weekRange(
     fromWeek:typing.Union[int,None,datetime.datetime]=None,
     toWeek:typing.Union[int,None,datetime.datetime]=None)->DateRange:
@@ -163,12 +176,20 @@ def weekRange(
         toWeek=_datetimeOfWeekNumber(fromWeek)
     # fromWeek,toWeek are now always a datetime
     start=(fromWeek-datetime.timedelta(days=fromWeek.weekday(),
-        hours=fromWeek.hour,minutes=fromWeek.minute,seconds=fromWeek.second,microseconds=fromWeek.microsecond))
+        hours=fromWeek.hour,
+        minutes=fromWeek.minute,
+        seconds=fromWeek.second,
+        microseconds=fromWeek.microsecond))
     end=(toWeek-datetime.timedelta(days=toWeek.weekday(),
-        hours=toWeek.hour,minutes=toWeek.minute,seconds=toWeek.second,microseconds=toWeek.microsecond))\
+        hours=toWeek.hour,
+        minutes=toWeek.minute,
+        seconds=toWeek.second,
+        microseconds=toWeek.microsecond))\
         +oneWeek()-datetime.timedelta(microseconds=1)
     return DateRange((start,end))
-def weekBefore(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+def weekBefore(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire week before a given date
     """
@@ -194,7 +215,9 @@ def nextWeek()->DateRange:
     return a range representing the entire next week
     """
     return weekRange(datetime.datetime.now()+datetime.timedelta(days=31))
-def weekAfter(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+def weekAfter(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire week after a given date
     """
@@ -240,8 +263,12 @@ def dayRange(
     else:
         toYear=fromYear
         toMonth=fromMonth
-    return DateRange((datetime.datetime(fromYear,fromMonth,fromDay,0,0,0),datetime.datetime(toYear,toMonth,toDay,23,59,59)))
-def dayBefore(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+    return DateRange(
+        (datetime.datetime(fromYear,fromMonth,fromDay,0,0,0),
+        datetime.datetime(toYear,toMonth,toDay,23,59,59)))
+def dayBefore(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire day before a given date
     """
@@ -267,7 +294,9 @@ def tomorrow()->DateRange:
     return a range representing the entire day tomorrow
     """
     return dayRange(datetime.datetime.now()+datetime.timedelta(days=1))
-def dayAfter(when:typing.Union[None,int,datetime.datetime,"DateRange"]=None)->DateRange:
+def dayAfter(
+    when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
+    )->DateRange:
     """
     return a range representing the entire day after a given date
     """

@@ -25,9 +25,10 @@ except ImportError as e:
         """
         check skyfield validity
         """
+        global showedSkyfieldWarning
         if not showedSkyfieldWarning:
             showedSkyfieldWarning=True
-            msg='WARN: This function requires the skyfield astronomical library\n\
+            msg='WARN: This requires the skyfield astronomical library\n\
                 install via:\n\
                     pip install skyfield'
             print(skyfieldError)
@@ -200,7 +201,9 @@ class LunarTimes:
             any string parseable by fuzzytime
             a proper skyfield Time object
         """
-        return findDay(lambda day: self.fullness(day)>=lightPercent,False,fromDate)
+        return findDay(
+            lambda day: self.fullness(day)>=lightPercent,False,fromDate
+            )
 
     def nextTimeLightIsLessThan(self,
         lightPercent:float=0.2,
@@ -215,7 +218,9 @@ class LunarTimes:
             any string parseable by fuzzytime
             a proper skyfield Time object
         """
-        return findDay(lambda day: self.fullness(day)<=lightPercent,False,fromDate)
+        return findDay(
+            lambda day: self.fullness(day)<=lightPercent,False,fromDate
+            )
 
     def nextFullMoon(self,
         fromDate:typing.Optional[datetime.date]=None
@@ -363,16 +368,17 @@ def cmdline(args:typing.Iterable[str])->int:
         print('Options:')
         print('   --brightness[=date] ........ %brightness of the moon')
         print('   --fullness[=date] .......... %fullness of the moon')
-        print('   --nextFullMoon[=date] ...... when is the next full moon')
-        print('   --nextNewMoon[=date] ....... when is the next full moon')
+        print('   --nextFullMoon[=date] ...... day of the next full moon')
+        print('   --nextNewMoon[=date] ....... day of the next full moon')
         print('   --nextTimeLightIsGreaterThan[=percent,date]')
         print('   ............................ get the next bright night')
         print('   --nextTimeLightIsLessThan[=percent,date]')
         print('   ............................ get the next dark night')
-        print('   --phaseAngle[=date] ........ lunar phase in degrees (new=0 180=full)')
+        print('   --phaseAngle[=date] ........ lunar phase in degrees')
+        print('                                (new=0 180=full)')
         print('   --phaseText[=date] ......... lunar phase text description')
-        print('   --previousFullMoon[=date] .. when was the previous full moon')
-        print('   --previousNewMoon[=date] ... when was the previous new moon')
+        print('   --previousFullMoon[=date] .. day of the previous full moon')
+        print('   --previousNewMoon[=date] ... day of the previous new moon')
         return -1
     return 0
 

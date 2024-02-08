@@ -1,12 +1,14 @@
 """
-This is a python implementation of the javascript Temporal date/time handling system
+This is a python implementation of the javascript
+Temporal date/time handling system
 """
 import typing
 
 
 class Temporal:
     """
-    This is a python implementation of the javascript Temporal date/time handling system.
+    This is a python implementation of the javascript
+    Temporal date/time handling system.
 
     (Temporal is endorsed as the likely secessor to Moment.js
     https://momentjs.com/docs/#/-project-status/future/ )
@@ -20,16 +22,20 @@ class Temporal:
     class TemporalBase:
         def decode(self,s:str):
             ...
-        def encode(self)->s:
+        def encode(self)->str:
             ...
 
     class ZonedDateTime(TemporalBase):
+        ...
 
-    class TimeZone
+    class TimeZone:
+        ...
 
-    class Calendar
+    class Calendar:
+        ...
 
-    class Duration
+    class Duration:
+        ...
 
     class Instance:
         ...

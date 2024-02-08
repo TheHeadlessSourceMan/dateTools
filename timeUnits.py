@@ -4,10 +4,13 @@ Units for time values, eg Day, Month, Year, etc
 import typing
 from abc import abstractmethod
 import datetime
-from dateTools import UnixTime, UnixTimeCompatible
+from dateTools import UnixTime,UnixTimeCompatible
+if typing.TYPE_CHECKING:
+    from dateTools import When
 
 
-TimeUnitValueTypes=typing.Union[float,int,"TimeUnit",datetime.datetime,UnixTime]
+TimeUnitValueTypes=typing.Union[
+    float,int,"TimeUnit",datetime.datetime,UnixTime]
 
 class TimeUnit:
     """
@@ -26,18 +29,19 @@ class TimeUnit:
         for week in Month(datetime.now()).weeks:
 
     NOTE: whenever the value is out-of-bounds, will clamp
-        Year("Feb 29")+1 # not going to be a leap year, so will return Feb 28 when questioned
+        Year("Feb 29")+1
+        is not going to be a leap year, so will return Feb 28
     """
-    if typing.TYPE_CHECKING:
-        from dateTools import When
 
     def __init__(self,
         subUnits:type,
         value:TimeUnitValueTypes,
         conceptualValue:typing.Union[None,float,int]=None):
         """
-        :param value: value auto-decides whether it is an concrete or conceptual value
-        :type value: typing.Union[float,int,&quot;TimeUnit&quot;,datetime.datetime]
+        :param value: value auto-decides whether it is an concrete
+            or conceptual value
+        :type value: typing.Union[
+            float,int,&quot;TimeUnit&quot;,datetime.datetime]
         :param conceptualValue: _description_, defaults to None
         :type conceptualValue: typing.Union[None,float,int], optional
         """
@@ -97,10 +101,15 @@ class TimeUnit:
         """
         return self.next(-1*count)
 
-    def assign(self,value:TimeUnitValueTypes,conceptualValue:typing.Union[None,float,int]=None):
+    def assign(self,
+        value:TimeUnitValueTypes,
+        conceptualValue:typing.Union[None,float,int]=None
+        )->None:
         """
-        :param value: value auto-decides whether it is an concrete or conceptual value
-        :type value: typing.Union[float,int,&quot;TimeUnit&quot;,datetime.datetime]
+        :param value: value auto-decides whether it is an concrete
+            or conceptual value
+        :type value: typing.Union[
+            float,int,&quot;TimeUnit&quot;,datetime.datetime]
         :param conceptualValue: _description_, defaults to None
         :type conceptualValue: typing.Union[None,float,int], optional
         """
@@ -174,7 +183,10 @@ class Month(TimeUnit):
     """
     Time unit representing months
     """
-    def __init__(self,value:TimeUnitValueTypes,conceptualValue:typing.Union[None,float,int]=None):
+    def __init__(self,
+        value:TimeUnitValueTypes,
+        conceptualValue:typing.Union[None,float,int]=None):
+        """ """
         TimeUnit.__init__(self,Day,value,conceptualValue)
     @property
     def dateTime(self)->datetime.datetime:
