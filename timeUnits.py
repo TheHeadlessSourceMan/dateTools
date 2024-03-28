@@ -173,11 +173,27 @@ class Day(TimeUnit):
     """
     Time unit representing days
     """
+    def next(self,count:int=1)->"Day":
+        """
+        Get the next day
+        """
+        return Day(
+            self.subUnits,
+            self.datetime+datetime.timedelta(days=count),
+            self.conceptualValue)
 
 class Week(TimeUnit):
     """
     Time unit representing weeks
     """
+    def next(self,count:int=1)->"Week":
+        """
+        Get the next seek
+        """
+        return Week(
+            self.subUnits,
+            self.datetime+datetime.timedelta(days=count*7),
+            self.conceptualValue)
 
 class Month(TimeUnit):
     """
@@ -214,3 +230,21 @@ class Year(TimeUnit):
     """
     Time unit representing years
     """
+    def next(self,count:int=1)->"Year":
+        """
+        Get the next seek
+        """
+        d=self.datetime
+        try:
+            # simply change the year
+            d=d.replace(year=d.year+count)
+        except ValueError:
+            # if there is not this day next year (this is feb 29)
+            # just go to the next day
+            d+=(
+                datetime.datetime(d.year+count,1,1)- \
+                datetime.datetime(d.year,1,1))
+        return Year(
+            self.subUnits,
+            d,
+            self.conceptualValue)

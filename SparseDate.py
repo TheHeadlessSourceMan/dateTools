@@ -67,9 +67,9 @@ class SparseDate:
 
     def getDayOfWeekRegexString(self)->str:
         """
-        returns a regex string that will get all weekdays or abbreviations 
+        returns a regex string that will get all weekdays or abbreviations
         and return
-        
+
         group(1)=full name of week day
 
         It is recommended you use this with re.IGNORECASE.
@@ -87,10 +87,12 @@ class SparseDate:
 
     def setByStory(self,story:str)->None:
         """
-        This can configure the object to match a user-readable story.  Examples:
+        This can configure the object to match a user-readable story.
+        Examples:
            "every day except saturday"
            "every week day except bank holidays and every third wednesday"
-           "every day except christmas, easter, the new moon, and every other friday starting today"
+           "every day except christmas, easter, the new moon, and
+            every other friday starting today"
 
         TODO: this is currently experemental!
         """
@@ -98,12 +100,20 @@ class SparseDate:
         from .seasons._seasonsBase import ordinalIndicatorsRegexText
         exceptions=''
         counts=['other','odd','even']
-        named_days=['christmas','easter',r'(?:(?:bank\s+)|(?:(?:major\s+)?us\s+))?holiday']
+        named_days=[
+            'christmas',
+            'easter',
+            r'(?:(?:bank\s+)|(?:(?:major\s+)?us\s+))?holiday']
         sep=r"""(?:\s|[,]|and)+"""
+        allWeekdays= \
+            '('+ \
+            (self.getDayOfWeekRegexString()+ '|')+ \
+            '|'.join(named_days)+ \
+            ')'
         regexParts=['?:every',
             '|'.join(counts),
             ordinalIndicatorsRegexText,
-            '('+self.getDayOfWeekRegexString()+'|'+'|'.join(named_days)+')(e?s)?',
+            allWeekdays+'(e?s)?',
             r"""(?P<day>\s+)?of\s+the\s+month""",
             r"""starting(?:\s+(?:at|on\s+))?\s+(.*?)"""
             ]

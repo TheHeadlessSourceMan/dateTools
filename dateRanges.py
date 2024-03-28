@@ -464,7 +464,7 @@ class DateRange(JsonSerializeable):
         """
         name of the to month
         """
-        return self.MONTHLIST[self.toMonth-1]
+        return MONTHLIST[self.toMonth-1]
 
     @property
     def text(self)->str:
