@@ -9,9 +9,9 @@ import datetime
 
 from miscFunctions import findDay
 try:
-    import skyfield.almanac
-    import skyfield.api
-    import skyfield.timelib
+    import skyfield.almanac # type: ignore
+    import skyfield.api # type: ignore
+    import skyfield.timelib # type: ignore
     def skyfieldCheck():
         """
         check skyfield validity

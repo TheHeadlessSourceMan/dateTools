@@ -76,13 +76,15 @@ class Parser:
                         break
         return ''.join((first,middle,second,middle))
 
-    def parse(self,s:str="tuesday,may 3",
+    def parse(self,
+        s:str="tuesday,may 3",
         referenceDate:typing.Optional[datetime.date]=None
-        )->typing.Union[dateTools.Date, dateTools.Time, dateTools.dateToolsDateTime,
+        )->typing.Union[dateTools.Date,dateTools.Time,dateTools.dateToolsDateTime,
             dateTools.DateRange,dateTools.TimeRange,dateTools.DateTimeRange,
             dateTools.SparseDate,dateTools.SparseTime,dateTools.SparseDateTime,
             None]:
         """
+        Parse a date string
 
         :param referenceDate: used, for example if an email says "meet me next tuesday",
             then the referenceDate would be the send date of that email.
@@ -100,7 +102,7 @@ class Parser:
         if isinstance(s,bytes):
             s=s.decode('utf-8','ignore')
         th="""(?P<th>"""+('|'.join(ordinalIndicators[1:]))+""")?"""
-        tokre=r"""(?P<alpha>[a-z]+)|(?P<numeric>(?P<number>[0-9]+)"""+th+""")|(\s*?(?P<tok>[,.-/\s\\:|])\s*)""" # pylint: disable=line-too-long
+        tokre=r"""(?P<alpha>[a-z]+)|(?P<numeric>(?P<number>[0-9]+)"""+th+""")|(\s*?(?P<tok>[,.-/\s\\:|])\s*)""" # noqa: E501 # pylint: disable=line-too-long
         tokre=re.compile(tokre,re.IGNORECASE|re.DOTALL)
         tokenized=[] # the actual value of the entry
         identities=[] # identity codes for each entry

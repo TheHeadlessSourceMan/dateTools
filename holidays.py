@@ -24,14 +24,16 @@ class Holiday(JsonSerializeable):
     def __init__(self,
         name:str,
         match:typing.Optional[typing.Pattern]=None,
-        date:datetime.date=None,
+        date:typing.Optional[datetime.date]=None,
         dayOff:typing.Optional[str]=None):
         """ """
         self._name:str=name
         self._match:typing.Optional[typing.Pattern]=None
         self._matchre:typing.Optional[typing.Pattern]=None
         self.match:typing.Optional[typing.Pattern]=match # forces re compile
-        self.date=DateRange(date)
+        self.date:typing.Optional[DateRange]=None
+        if date is not None:
+            self.date=DateRange(date)
         self.dayOff:typing.Optional[str]=dayOff
         JsonSerializeable.__init__(self)
 
@@ -69,13 +71,13 @@ class Holiday(JsonSerializeable):
             self._matchre=re.escape(name).replace('\\\\s','\\s')
 
     @property
-    def match(self)->typing.Pattern:
+    def match(self)->typing.Optional[typing.Pattern]:
         """
         the match string or None
         """
         return self._match
     @match.setter
-    def match(self,match:typing.Pattern):
+    def match(self,match:typing.Optional[typing.Pattern]):
         self._match=match
         if match is None:
             self.name=self.name
@@ -106,15 +108,15 @@ class Holiday(JsonSerializeable):
             date=datetime.datetime.now()
         if date in self.date:
             if self.dayOff=="national" or dayOff is None:
-                return self
+                return True
             if dayOff=="bank" and self.dayOff=="bank":
-                return self
-        return None
+                return True
+        return False
 
     def next(self,
         date:typing.Optional[datetime.date]=None,
         dayOff:typing.Optional[str]=None
-        )->bool:
+        )->typing.Optional[datetime.date]:
         """
         get the date of the next occourance of this holiday from the given date
 
@@ -130,6 +132,8 @@ class Holiday(JsonSerializeable):
                 return None
             if self.dayOff is None:
                 return None
+        if self.date is None:
+            return None
         return self.date.next(date)
 
     def __repr__(self)->str:
@@ -152,9 +156,12 @@ class Holidays(JsonSerializeable):
         """ """
         if filename is None:
             import locale
-            localeString=locale.getdefaultlocale()[0].lower().replace('_','-')
+            currentLocale=locale.getdefaultlocale()
+            if currentLocale is None:
+                raise Exception("Unable to determine locale")
+            localeString=currentLocale[0].lower().replace('_','-')
             filename='%sholidays%sholidays_%s.json'%(HERE,os.sep,localeString)
-        self.holidays={}
+        self.holidays:typing.Dict[str,Holiday]={}
         JsonSerializeable.__init__(self,filename)
 
     @property
@@ -175,7 +182,7 @@ class Holidays(JsonSerializeable):
     def isHoliday(self,
         date:typing.Optional[datetime.date]=None,
         dayOff:typing.Optional[str]=None
-        )->bool:
+        )->typing.Optional[Holiday]:
         """
         :property date: if None, use now()
         :property dayOff: limit to holidays that are this kind of day off
@@ -194,7 +201,7 @@ class Holidays(JsonSerializeable):
     def nextHolidays(self,
         date:typing.Optional[datetime.date]=None,
         dayOff:typing.Optional[str]=None
-        )->typing.Generator[typing.Tuple[datetime.date,str],None,None]:
+        )->typing.Iterable[typing.Tuple[datetime.date,str]]:
         """
         gets the next occourance of all holidays (in order)
 
@@ -205,7 +212,7 @@ class Holidays(JsonSerializeable):
         returns [(date,holiday)]
         """
         if not self.holidays:
-            return None
+            return []
         if date is None:
             date=datetime.datetime.now()
         nextHolidays=[]

@@ -20,13 +20,22 @@ class Temporal:
     """
 
     class TemporalBase:
+        """
+        Python equivilent of the Javascript Temporal library
+        """
         def decode(self,s:str):
-            ...
+            """
+            Decode a text string
+            """
         def encode(self)->str:
-            ...
+            """
+            Encode a text string
+            """
 
     class ZonedDateTime(TemporalBase):
-        ...
+        """
+        Timestamp with a timezone
+        """
 
     class TimeZone:
         ...

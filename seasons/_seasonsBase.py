@@ -1,7 +1,7 @@
 """
 Base classes and types for working with seasons
 
-To select the preferred name to call "fall", define 
+To select the preferred name to call "fall", define
    PREFER_SEASON_NAME='fall'
 or
    PREFER_SEASON_NAME='autumn'
@@ -52,6 +52,9 @@ class Season(DateRange):
         return dr
 
 class SeasonsBase:
+    """
+    Base class for seasons
+    """
     def get(self,seasonDesc:str)->SeasonBase:
         """
         :seasonDesc: anything like
@@ -60,7 +63,7 @@ class SeasonsBase:
         if m is None:
             raise DateFormatException(seasonDesc)
         seasonName=m.group('season').lower()
-        ret=typing.cast(SeasonBase,getattr(self,seasonName))
+        ret=typing.cast("SeasonBase",getattr(self,seasonName))
         if 'subdiv' in ret.groups.names():
             ret=ret.subRange(m.group('subdiv'))
         return ret
@@ -84,17 +87,32 @@ class SeasonsBase:
             ret=ret.subRange(m.group('subdiv'))
         return ret
     @property
-    def spring(self)->SeasonBase:
+    def spring(self)->"SeasonBase":
+        """
+        Spring season
+        """
         raise NotImplementedError()
     @property
-    def summer(self)->SeasonBase:
+    def summer(self)->"SeasonBase":
+        """
+        Summer season
+        """
         raise NotImplementedError()
     @property
-    def winter(self)->SeasonBase:
+    def winter(self)->"SeasonBase":
+        """
+        Winter season
+        """
         raise NotImplementedError()
     @property
-    def fall(self)->SeasonBase:
+    def fall(self)->"SeasonBase":
+        """
+        Autumn season
+        """
         raise NotImplementedError()
     @property
-    def autumn(self)->SeasonBase:
+    def autumn(self)->"SeasonBase":
+        """
+        Autumn season
+        """
         return self.fall

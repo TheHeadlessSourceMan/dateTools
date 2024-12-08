@@ -3,7 +3,7 @@ Define the seasons based upon agricultural calendar.
 
 This particular model is specific to Northern temperate climates.
 
-To select the preferred name to call "fall", define 
+To select the preferred name to call "fall", define
    PREFER_SEASON_NAME='fall'
 or
    PREFER_SEASON_NAME='autumn'
@@ -11,14 +11,15 @@ before importing (fall is the default)
 """
 import typing
 from enum import Enum
-from ._seasonsBase import *
 from dateTools import DateRange
+from _seasonsBase import *
 
 
 class FuzzyTemperture(Enum):
     """
     NOTE: this value is always one of FREEZING,WARM,etc
-    therefore, FuzzyTemperture('41') < FuzzyTemperture('42') is FALSE!  They are both COOL!
+    therefore, FuzzyTemperture('41') < FuzzyTemperture('42') is FALSE!
+    They are both COOL!
     """
 
     FREEZING=32
@@ -39,6 +40,9 @@ class FuzzyTemperture(Enum):
         self.assign(value,units)
 
     def assign(self,value:typing.Union[float,str],units:str='f'):
+        """
+        Assign the value of this temperture
+        """
         units=units.lower()
         if isinstance(value,str):
             value=float(value) # TODO: decode freeform strings
@@ -70,6 +74,7 @@ class FuzzyTemperture(Enum):
 
     def toText(self,caps='Aa')->str:
         """
+        Get this temperture as text
         """
         ret=str(self) # lower case
         if caps[0].isupper():
@@ -106,32 +111,56 @@ class AgriculturalSeasons(SeasonsBase):
     Agricultural seasons based upon climate rather than astronomy.
     """
 
-    def __init__(self,tempertureByDayOfYear:typing.SupportsIndex[int],tempertureUnits='f',hemisphere='n'):
-        self.tempertureByDayOfYear:typing.SupportsIndex[int]=tempertureByDayOfYear
+    def __init__(self,
+        tempertureByDayOfYear:typing.SupportsIndex[int],
+        tempertureUnits='f',
+        hemisphere='n'):
+        """ """
+        self.tempertureByDayOfYear:typing.SupportsIndex=\
+            tempertureByDayOfYear
         self.tempertureUnits=tempertureUnits
         self.hemisphere=hemisphere
 
     @property
     def spring(self)->DateRange:
-        """ as defined by non-freezing weather"""
+        """
+        as defined by non-freezing weather
+        """
         return
     @property
     def summer(self)->DateRange:
-        """ as defined by warm or hot weather"""
+        """
+        as defined by warm or hot weather
+        """
         return
     @property
     def winter(self)->DateRange:
-        """ as defined by cold/freezing weather"""
+        """
+        as defined by cold/freezing weather
+        """
         return
     @property
     def fall(self)->DateRange:
-        """ as defined by cool weather"""
+        """
+        as defined by cool weather
+        """
         return
 
-    def fuzzyTempertureForDayOfYear(self,dayOfYear:int)->FuzzyTemperture:
-        return FuzzyTemperture(self.tempertureByDayOfYear[dayOfYear],self.tempertureUnits)
+    def fuzzyTempertureForDayOfYear(self,
+        dayOfYear:int
+        )->FuzzyTemperture:
+        """
+        Determine the expected temperture for a given day
+        """
+        return FuzzyTemperture(
+            self.tempertureByDayOfYear[dayOfYear],
+            self.tempertureUnits)
 
-    def getNextFrostDay(self,fromDay:int,maxDay:typing.Optional[int]=None,reverse=False)->typing.Optional[int]:
+    def getNextFrostDay(self,
+        fromDay:int,
+        maxDay:typing.Optional[int]=None,
+        reverse=False
+        )->typing.Optional[int]:
         """
         Gets the next expected frost day from a given day
         """
@@ -171,6 +200,7 @@ class AgriculturalSeasons(SeasonsBase):
     @property
     def dayOfFirstFrost(self)->typing.Optional[int]:
         """
+        Get the first potential day of frost.
         """
         ndays=len(self.tempertureByDayOfYear)
         if self.hemisphere.lower()=='s':
@@ -182,6 +212,9 @@ class AgriculturalSeasons(SeasonsBase):
         return self.getNextFrostDay(s,e)
     @property
     def dayOfLastFrost(self)->typing.Optional[int]:
+        """
+        Get the last potential day of frost.
+        """
         ndays=len(self.tempertureByDayOfYear)
         if self.hemisphere.lower()=='s':
             s=int(ndays/2)
@@ -190,5 +223,3 @@ class AgriculturalSeasons(SeasonsBase):
             s=ndays
             e=int(ndays/2)
         return self.getNextFrostDay(s,e,reverse=True)
-
-    

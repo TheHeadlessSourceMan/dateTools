@@ -19,7 +19,9 @@ RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 ComparableDatetimeCompatible=typing.Union[
     datetime.datetime,int,float,"ComparableDatetime"]
 ComparableDateTimeCompatible=ComparableDatetimeCompatible
-def asComparableDatetime(cdt:ComparableDatetimeCompatible)->"ComparableDatetime":
+def asComparableDatetime(
+    cdt:ComparableDatetimeCompatible
+    )->"ComparableDatetime":
     """
     Creates and returns a ComparableDateTime based on cdt,
     or if it already is one, simply return it
@@ -123,7 +125,9 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
             lowInclusive,highInclusive,
             ComparableDatetime)
 
-class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datetime.datetime]]):
+class DateRange(
+    JsonSerializeable,
+    Range[datetime.datetime,typing.Union[str,datetime.datetime]]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"
@@ -186,7 +190,8 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
         self._toTime=None
         self.timeFormat="%I:%M%p"
         JsonSerializeable.__init__(self,filename,jsonObj)
-        Range[datetime.datetime,typing.Union[str,datetime.datetime]].__init__(self,rangestring)
+        Range[datetime.datetime,typing.Union[str,datetime.datetime]]\
+            .__init__(self,rangestring)
         if rangestring is not None:
             self.assign(rangestring)
 
