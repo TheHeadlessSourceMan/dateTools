@@ -1,17 +1,20 @@
 #!/usr/bin/env
 # -*- coding: utf-8 -*-
 """
-Simple program to get the time of day 'morning','afternoon','evening', or 'night'
+Simple program to get the time of day, eg:
+    'morning','afternoon','evening', or 'night'
 """
 import typing
 import datetime
 
 
-def timeOfDay(timestamp:typing.Union[None,datetime.datetime,datetime.date]=None,
+def timeOfDay(
+    timestamp:typing.Union[None,datetime.datetime,datetime.date]=None,
     leadTimeHours:float=0,closeOfBusiness:datetime.time=None)->str:
     """
     :property timestamp: timestamp to get time of day of. if missing, use now
-    :property leadTimeHours: add this many hours - useful for emails and stuff like that
+    :property leadTimeHours: add this many hours
+        (useful for emails and stuff like that)
     :property closeOfBusiness: if the time is after closeOfBusiness hour,
         then will assume 'morning' tomorrow
     """
@@ -46,7 +49,9 @@ def cmdline(args:typing.Iterable[str])->int:
                 if arg[0] in ['-h','--help']:
                     printhelp=True
                 elif arg[0]=='--now':
-                    print(timeOfDay(leadTimeHours=leadTimeHours,closeOfBusiness=closeOfBusiness))
+                    print(timeOfDay(
+                        leadTimeHours=leadTimeHours,
+                        closeOfBusiness=closeOfBusiness))
                 elif arg[0]=='--closeOfBusiness':
                     closeOfBusiness=int(arg[1])
                 elif arg[0]=='--leadTimeHours':

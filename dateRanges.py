@@ -10,13 +10,14 @@ from paths import URLCompatible
 from jsonSerializeable import JsonSerializeable
 from rangeTools import Range,Ranges
 import dateTools.miscFunctions as miscFunctions
-from .calendarNames import *
+from dateTools.calendarNames import WeekdayAbbrs,MonthAbbrs
 
 
 RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 
 
-ComparableDatetimeCompatible=typing.Union[datetime.datetime,int,float,"ComparableDatetime"]
+ComparableDatetimeCompatible=typing.Union[
+    datetime.datetime,int,float,"ComparableDatetime"]
 ComparableDateTimeCompatible=ComparableDatetimeCompatible
 def asComparableDatetime(cdt:ComparableDatetimeCompatible)->"ComparableDatetime":
     """
@@ -30,7 +31,7 @@ asComparableDateTime=asComparableDatetime
 
 class ComparableDatetime:
     """
-    Make datetimes comparable
+    Something that is comparable as a date/time
     """
     def __init__(self,cdt:ComparableDatetimeCompatible):
         if isinstance(cdt,(int,float)):
@@ -42,7 +43,7 @@ class ComparableDatetime:
     @property
     def timestamp(self)->float:
         """
-        this, as a unix time timestamp
+        timestamp in unixtime (with float milliseconds)
         """
         return datetime.datetime.timestamp(self.datetime)
     @timestamp.setter
@@ -50,15 +51,20 @@ class ComparableDatetime:
         self.datetime=datetime.datetime.fromtimestamp(timestamp)
 
     def __sub__(self,other:typing.Any)->"ComparableDatetime":
-        return ComparableDatetime(self.timestamp-asComparableDatetime(other).timestamp)
+        return ComparableDatetime(
+            self.timestamp-asComparableDatetime(other).timestamp)
     def __add__(self,other:typing.Any)->"ComparableDatetime":
-        return ComparableDatetime(self.timestamp+asComparableDatetime(other).timestamp)
+        return ComparableDatetime(
+            self.timestamp+asComparableDatetime(other).timestamp)
     def __mul__(self,other:typing.Any)->"ComparableDatetime":
-        return ComparableDatetime(self.timestamp*asComparableDatetime(other).timestamp)
+        return ComparableDatetime(
+            self.timestamp*asComparableDatetime(other).timestamp)
     def __truediv__(self,other:typing.Any)->"ComparableDatetime":
-        return ComparableDatetime(self.timestamp/asComparableDatetime(other).timestamp)
+        return ComparableDatetime(
+            self.timestamp/asComparableDatetime(other).timestamp)
     def __floordiv__(self,other:typing.Any)->"ComparableDatetime":
-        return ComparableDatetime(self.timestamp//asComparableDatetime(other).timestamp)
+        return ComparableDatetime(
+            self.timestamp//asComparableDatetime(other).timestamp)
     def __lt__(self, other:typing.Any) -> bool:
         return self.timestamp<asComparableDatetime(other).timestamp
     def __gt__(self, other:typing.Any) -> bool:
@@ -74,12 +80,13 @@ ComparableDateTime=ComparableDatetime
 
 
 DateRangeSimpleCompatible=typing.Union[
-    ComparableDatetime,typing.Tuple[ComparableDatetime,ComparableDatetime],
+    ComparableDatetime,
+    typing.Tuple[ComparableDatetime,ComparableDatetime],
     "DateRangeSimple"]
 def asDateRangeSimple(dateRange:DateRangeSimpleCompatible)->"DateRangeSimple":
     """
-    Always returns a DateRangeSimple.  Either creates from the passed in dateRange
-    or if it already is one, simply return it.
+    Always return a DataRangeSimple object. If it is one,
+    return as-is. If not, create one on-the-fly.
     """
     if isinstance(dateRange,DateRangeSimple):
         return dateRange
@@ -95,7 +102,11 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
     def __init__(self,
         low:typing.Union[
             ComparableDatetimeCompatible,
-            typing.Tuple[ComparableDatetimeCompatible,ComparableDatetimeCompatible]],
+            typing.Tuple[
+                ComparableDatetimeCompatible,
+                ComparableDatetimeCompatible
+                ]
+            ],
         high:typing.Optional[ComparableDatetimeCompatible]=None,
         step:typing.Optional[ComparableDatetimeCompatible]=None,
         center:typing.Optional[ComparableDatetimeCompatible]=None,
@@ -107,7 +118,10 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
         :lowInclusive: is comparison >low or >=low
         :highInclusive: is comparison <high or <=high
         """
-        Range.__init__(self,low,high,step,center,lowInclusive,highInclusive,ComparableDatetime)
+        Range.__init__(self,
+            low,high,step,center,
+            lowInclusive,highInclusive,
+            ComparableDatetime)
 
 class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datetime.datetime]]):
     """
@@ -147,11 +161,15 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
                 ("""+rangeIndicator+r"""(?P<toTime>"""+time+"""))?
             )?"""
         #print(regex)
-        self.DECODER=re.compile(regex.replace('\n','').replace(' ',''),re.IGNORECASE)
+        self.DECODER=re.compile(regex.replace('\n','').replace(' ',''),re.IGNORECASE) # noqa: E501 # pylint: disable=line-too-long
         return self.DECODER
 
     def __init__(self,
-        rangestring:typing.Union[None,str]=None,
+        dateRange:typing.Union[
+            None,str,
+            "DateRange",
+            datetime.datetime,
+            typing.Tuple[datetime.datetime,datetime.datetime]]=None,
         filename:typing.Optional[URLCompatible]=None,
         jsonObj:typing.Union[str,typing.Dict,None]=None):
         """ """
@@ -185,7 +203,7 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
         self.month=1 # unlike datetime, we start with day 1
         self.toMonth=12
         self.monthDay=1 # unlike datetime, we start with day 1
-        self.toMonthDay=32 # This is allowed to be higher than the moth can handle
+        self.toMonthDay=32 # allowed to be higher than the month can handle
         self.weekday=0 # 0=Sunday,1=Monday, etc
         self.toWeekday=6
         self.time=datetime.time.min
@@ -220,7 +238,8 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
         """
         this object as a json dict
 
-        it can also be assigned to json string, which will go through assign() instead
+        it can also be assigned to json string
+        which will go through assign() instead
         """
         ret={}
         if self.month>1 or self.toMonth<12:
@@ -257,14 +276,33 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
             else:
                 raise Exception('unknown field "%s"'%k)
 
-    def assign(self,rangestring:str)->None:
+    def assign(self,
+        dateRange:typing.Union[
+            None,str,"DateRange",
+            datetime.datetime,
+            typing.Tuple[datetime.datetime,datetime.datetime]]
+        )->None:
         """
         assign the value of this date range
         """
+        if dateRange is None:
+            self.reset()
+            return
+        if isinstance(dateRange,str):
+            self._assignRangeString(dateRange)
+            return
+        if isinstance(dateRange,datetime.datetime):
+            dateRange=(dateRange,dateRange)
+        self.reset()
+        self.fromTime=dateRange[0]
+        self.toTime=dateRange[1]
+
+    def _assignRangeString(self,rangestring:str)->None:
         self.reset()
         m=self.DECODER.match(rangestring)
         if m is None:
-            raise Exception('ERR: unable to decode date range "'+rangestring+'"')
+            msg=f'ERR: unable to decode date range "{rangestring}"'
+            raise Exception(msg)
         # decode months
         month=m.group('month')
         if month is not None:
@@ -300,6 +338,51 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
             else:
                 self.toTime=toTime
 
+    def iterateDays(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full day of every
+        day in this range
+        """
+        from dateTools.commonDateRanges import dayRange,dayAfter
+        d=dayRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=dayAfter(d)
+            yield d
+    def iterateWeeks(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full week of every
+        week in this range
+        """
+        from dateTools.commonDateRanges import weekRange,weekAfter
+        d=weekRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=weekAfter(d)
+            yield d
+    def iterateMonths(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full month
+        of every month in this range
+        """
+        from dateTools.commonDateRanges import monthRange,monthAfter
+        d=monthRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=monthAfter(d)
+            yield d
+    def iterateYears(self)->typing.Generator["DateRange",None,None]:
+        """
+        Yield a series of DateRange objects representing the full year of every
+        year in this range
+        """
+        from dateTools.commonDateRanges import yearRange,yearAfter
+        d=yearRange(self.fromTime)
+        yield d
+        while d<self.toTime:
+            d=yearAfter(d)
+            yield d
+
     def next(self,
         afterDate:typing.Optional[datetime.date]=None
         )->datetime.date:
@@ -322,8 +405,9 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
                     if afterDate.time()<=self.toTime:
                         if afterDate.time()>=self.time:
                             return afterDate # do it now!
-                         # do it today, but awhile later
-                        return datetime.datetime.combine(afterDate.date(),self.time)
+                        # do it today, but awhile later
+                        return datetime.datetime.combine(
+                            afterDate.date(),self.time)
                 else:
                     nextDate=afterDate.date()
                     numdays=onDay-startDay
@@ -346,7 +430,7 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
         :property fromDate: if None, use now()
         :property inUnits: can be 'days', 'hours', 'minutes', 'seconds',
             or 'hms' for string format like "5h 3m 21s"
-            (string format is very forgiving - anything that starts with 'd','h','m','s')
+            (format is very forgiving - anything starting with 'd','h','m','s')
             if None, returns a datetime.timedelta
 
         returns how long until the next event
@@ -381,7 +465,7 @@ class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datet
         """
         name of the to month
         """
-        return self.MONTHLIST[self.toMonth-1]
+        return MONTHLIST[self.toMonth-1]
 
     @property
     def text(self)->str:
@@ -455,7 +539,8 @@ class DateRanges(JsonSerializeable,Ranges):
         """
         return [dr.jsonObj for dr in self.dateRanges]
     @jsonObj.setter
-    def jsonObj(self,jsonObj:typing.Union[None,str,typing.Dict[str,typing.Any]]):
+    def jsonObj(self,
+        jsonObj:typing.Union[None,str,typing.Dict[str,typing.Any]]):
         """
         it can also be a json string, which will go through assign() instead
         """
@@ -479,7 +564,7 @@ class DateRanges(JsonSerializeable,Ranges):
         :property fromDate: if None, use now()
         :property inUnits: can be 'days', 'hours', 'minutes', 'seconds',
             or 'hms' for string format like "5h 3m 21s"
-            (string format is very forgiving - anything that starts with 'd','h','m','s')
+            (format is very forgiving - anything starting with 'd','h','m','s')
             if None, returns a datetime.timedelta
 
         returns how long until the next event

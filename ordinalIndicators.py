@@ -7,10 +7,11 @@ See also:
 import typing
 import re
 
-ordinals=(None,'first','second','third','fourh','fifth','sixth','seventh','eighth','nineth','tenth','eleventh')
+ordinals=(None,'first','second','third','fourh','fifth',
+    'sixth','seventh','eighth','nineth','tenth','eleventh')
 ordinalIndicators=(None,'st','nd','rd','th')
 
-# NOTE: this is techically a misapplication of unicode, but sometimes people do it.
+# NOTE: techically a misapplication of unicode, but sometimes people do it.
 unicodeSuperscriptOrdinalIndicators=(None,'ˢᵗ','ⁿᵈ','ʳᵈ','ᵗʰ')
 unicodeSuperscriptOrdinalIndicatorsCaps=(None,'ˢᵀ','ᴺᴰ','ᴿᴰ','ᵀᴴ')
 unicodeSuperscriptDigits=('⁰','¹','²','³','⁴','⁵','⁶','⁷','⁸','⁹')
@@ -21,21 +22,26 @@ ordinalIndicatorsRegex=re.compile(ordinalIndicatorsRegexText)
 def removeUnicodeSuperscripts(s:str)->str:
     """
     Remove unicode superscripts for digits and ordinal indicators
-    (NOTE: this will not un-superscript all characters, but just 0-9 and st,nd,rd,and th)
+    (NOTE: this will not un-superscript all characters,
+        but just 0-9 and st,nd,rd,and th)
 
     # TODO: a regex may be more efficient
     """
-    for lower,upper,actual in zip(unicodeSuperscriptOrdinalIndicators,unicodeSuperscriptOrdinalIndicatorsCaps,ordinalIndicators):
+    for lower,upper,actual in zip(
+        unicodeSuperscriptOrdinalIndicators,
+        unicodeSuperscriptOrdinalIndicatorsCaps,
+        ordinalIndicators):
         if lower is not None and actual is not None:
-            s=s.replace(lower,actual).replace(upper,actual).replace(upper[0]+lower[1],actual)
-    for actual,super in enumerate(unicodeSuperscriptDigits):
-        s=s.replace(super,actual)
+            s=s.replace(lower,actual).replace(upper,actual)
+            s=s.replace(upper[0]+lower[1],actual)
+    for actual,superscript in enumerate(unicodeSuperscriptDigits):
+        s=s.replace(superscript,actual)
     return s
 
 def fromOrdinal(fromOrdinal:typing.Union[int,str])->str:
     """
     Convert from ordinals to numbers
-    
+
     NOTE: Converts ALL orinals in the string to numeric digits.
     NOTE: If an unrecognizeable string is passed in, returns it unmodified.
 
@@ -55,7 +61,8 @@ def toOrdinal(fromNumber:typing.Union[int,str],mixedText=True,caps='ab')->str:
     Convert numbers into ordinals
 
     NOTE: If an unrecognizeable string is passed in, returns it unmodified.
-    NOTE: Only converts the last number, so toOrdinal(fromOrdinal(x)) may not be the same thing
+    NOTE: Only converts the last number
+        so toOrdinal(fromOrdinal(x)) may not be the same thing
 
     :caps: caps example 'ab','Ab',or 'AB'
 

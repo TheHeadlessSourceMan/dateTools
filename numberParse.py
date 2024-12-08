@@ -7,7 +7,7 @@ from .dateFormatException import DateFormatException
 
 NumberReText=r"""(?P<number>[0-9]+)"""
 
-TimeReText=r"""(?P<hour>[0-9]{1,2}(:(?P<minute>[0-9]{1,2})(:(?P<second>[0-9]{1,2}))))(\s*(?P<ampm>am|pm))?"""
+TimeReText=r"""(?P<hour>[0-9]{1,2}(:(?P<minute>[0-9]{1,2})(:(?P<second>[0-9]{1,2}))))(\s*(?P<ampm>am|pm))?""" # noqa: E501 # pylint: disable=line-too-long
 TimeRe=re.compile(TimeReText,re.IGNORECASE)
 
 def parseTime(t:str)->datetime.datetime:

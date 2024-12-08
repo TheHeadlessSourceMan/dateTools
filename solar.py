@@ -6,6 +6,9 @@ This program calculates solar times
 """
 import typing
 import datetime
+
+showedSkyfieldWarning=False
+skyfieldError=''
 try:
     import skyfield.almanac
     import skyfield.api
@@ -16,16 +19,15 @@ try:
         """
         return True
 except ImportError as e:
-    showedSkyfieldWarning=False
     skyfieldError=str(e)
-    showedSkyfieldWarning=False
     def skyfieldCheck():
         """
         Check for the existance of the skyfield library
         """
+        global showedSkyfieldWarning
         if not showedSkyfieldWarning:
             showedSkyfieldWarning=True
-            msg='WARN: This function requires the skyfield astronomical library\n\
+            msg='WARN: This requires the skyfield astronomical library\n\
             install via:\n\
                 pip install skyfield'
             print(skyfieldError)
@@ -131,7 +133,8 @@ class SolarTimes:
         else:
             firstDay=self._skyfieldTime(date)
             # get one year from that
-            lastDay=self._skyfieldTime(firstDay.utc_datetime()+datetime.timedelta(days=365))
+            lastDay=self._skyfieldTime(
+                firstDay.utc_datetime()+datetime.timedelta(days=365))
         # get the events that occour durring that time
         times,events=skyfield.almanac.find_discrete(firstDay,lastDay,
             skyfield.almanac.seasons(self.ephemeris))
@@ -179,19 +182,20 @@ class SolarTimes:
 
     def allday(self,
         date:typing.Optional[datetime.date]=None
-        )->typing.Tuple(datetime.time,datetime.time):
+        )->typing.Tuple[datetime.time,datetime.time]:
         """
         convert a datetime to all day range
 
         TODO: should probably be moved to daterange
         """
-        startTime=date-datetime.timedelta(hours=date.hour,minutes=date.minute,seconds=date.second)
+        startTime=date-datetime.timedelta(
+            hours=date.hour,minutes=date.minute,seconds=date.second)
         endTime=startTime+datetime.timedelta(hours=24)
         return (startTime,endTime)
 
     def sunriseSunset(self,
         date:typing.Optional[datetime.date]=None
-        )->typing.Tuple(datetime.time,datetime.time):
+        )->typing.Tuple[datetime.time,datetime.time]:
         """
         get the sunrise time
 
@@ -205,7 +209,8 @@ class SolarTimes:
         startTime=self._skyfieldTime(dateRange[0])
         endTime=self._skyfieldTime(dateRange[1])
         finderFunction=skyfield.almanac.sunrise_sunset(self.ephemeris,location)
-        ssTimes,ssTypes=skyfield.almanac.find_discrete(startTime,endTime,finderFunction)
+        ssTimes,ssTypes=skyfield.almanac.find_discrete(
+            startTime,endTime,finderFunction)
         if ssTypes[0]==0:
             return (self._datetime(ssTimes[1]),self._datetime(ssTimes[0]))
         return (self._datetime(ssTimes[0]),self._datetime(ssTimes[1]))
@@ -280,7 +285,8 @@ class SolarTimes:
         date:typing.Optional[datetime.date]=None
         )->typing.List[datetime.time,float]:
         """
-        returns a table of [(time,angle)] for every minute of the sun's path for this day
+        returns a table of [(time,angle)] for every minute
+        of the sun's path throughout the given day
         """
         oneMinute=datetime.timedelta(minutes=1)
         ss=self.sunriseSunset(date)
@@ -307,7 +313,8 @@ class SolarTimes:
         """
         ret=["time,azimuth,elevation"]
         for date,angle in path:
-            ret.append('%s,%f,%f'%(date.astimezone().isoformat(),angle[0],angle[1]))
+            row=(date.astimezone().isoformat(),angle[0],angle[1])
+            ret.append(','.join(row))
         return '\n'.join(ret)
 
     def getSolarProfile(self
@@ -366,9 +373,11 @@ class SolarTimes:
         """
         date=self._skyfieldTime(date)
         # look at the sun (but don't hurt yourself ;) )
-        location=self.ephemeris['earth'].at(date).observe(self.ephemeris['sun'])
+        ephem=self.ephemeris['sun']
+        location=self.ephemeris['earth'].at(date).observe(ephem)
         # account for our location on earth
-        location=location.frame_latlon(skyfield.api.wgs84.latlon(self.latlong[0],self.latlong[1]))
+        location=location.frame_latlon(
+            skyfield.api.wgs84.latlon(self.latlong[0],self.latlong[1]))
         return location[1].degrees,location[0].degrees,location[2].au
 
     def azimuth(self,
@@ -529,30 +538,35 @@ def cmdline(args:typing.Iterable[str])->int:
         print('Usage:')
         print('  solar.py [options]')
         print('Options:')
-        print('   --latlong=lat,long ...... IMPORTANT! certain calculations will be incorrect')
-        print('                             without knowing the global position we are talking')
-        print('                             about FIRST!')
-        print('   --angle[=date] ........ both the azimuth and elevation')
-        print('   --azimuth[=date] ...... compass direction of the sun')
-        print('   --elevation[=date] .... elevation of the sun in the sky')
-        print('   --equinoxes[=date] .... name and time of all equinoxes this year')
+        print('   --latlong=lat,long ..... IMPORTANT! certain calculations')
+        print('                            will be incorrect without knowing')
+        print('                            the global position we are talking')
+        print('                            about FIRST!')
+        print('   --angle[=date] ......... both the azimuth and elevation')
+        print('   --azimuth[=date] ....... compass direction of the sun')
+        print('   --elevation[=date] ..... elevation of the sun in the sky')
+        print('   --equinoxes[=date] ..... name and time of all equinoxes')
+        print('                            this year')
         print('   --nextAutumnalEquinox[=date]')
-        print('     ........................ the date of the next autumn equinox')
+        print('     ...................... date of the next autumn equinox')
         print('   --nextSummerSolstice[=date]')
-        print('     ........................ the date of the next summer solstice')
+        print('     ...................... date of the next summer solstice')
         print('   --nextVernalEquinox[=date]')
-        print('     ........................ the date of the next spring equinox')
+        print('     ...................... date of the next spring equinox')
         print('   --nextWinterSolstice[=date]')
-        print('     ........................ the date of the next winter solstice')
-        print('   --solarMidnight[=date] . get the time the sun is opposite side of the earth')
-        print('   --solarNoon[=date] ..... get the time the sun is directly overhead.')
-        print('   --sunPath[=date] ....... the angle of the sun for every minute of the day')
+        print('                            date of the next winter solstice')
+        print('   --solarMidnight[=date] . get the time the sun is opposite')
+        print('                            side of the earth')
+        print('   --solarNoon[=date] ..... get the time the sun is directly')
+        print('                            overhead.')
+        print('   --sunPath[=date] ....... the angle of the sun for every')
+        print('                            minute of the day')
         print('   --sunrise[=date] ....... the sunrise time')
         print('   --sunriseSunset[=date] . sunrise and sunset time')
         print('   --sunset[=date] ........ sunset time')
         print('   --dayLength[=date] ..... how long a day is')
         print('   --nightLength[=date] ... how long a night is')
-        print('   --saveSolarProfile ....... save solar profile to csv')
+        print('   --saveSolarProfile ..... save solar profile to csv')
         return -1
     return 0
 

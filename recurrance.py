@@ -1,5 +1,6 @@
 """
-A general-purpose time recurrance (consider something like a standing meeting in a calendar)
+A general-purpose time recurrance
+(consider something like a standing meeting in a calendar)
 """
 import typing
 import datetime
@@ -8,7 +9,8 @@ from dateTools import TimeUnitValueTypes,TimeUnit,Month
 
 class Recurrance:
     """
-    A general-purpose time recurrance (consider something like a standing meeting in a calendar)
+    A general-purpose time recurrance
+    (consider something like a standing meeting in a calendar)
 
     TODO: be able to export to ical
     """
@@ -43,7 +45,8 @@ class Recurrance:
 
     def between(self,
         start:typing.Optional[datetime.datetime]=None,
-        end:typing.Optional[datetime.datetime]=None)->typing.Generator["When",None,None]:
+        end:typing.Optional[datetime.datetime]=None
+        )->typing.Generator["When",None,None]:
         """
         Return all occourances between the given dates
 
@@ -78,7 +81,9 @@ class Recurrance:
         """
         return len(list(self.between(start,end)))
 
-    def value(self,fromTime:typing.Optional[datetime.datetime]=None)->typing.Union[float,int]:
+    def value(self,
+        fromTime:typing.Optional[datetime.datetime]=None
+        )->typing.Union[float,int]:
         """
         Get the next recurrance value from a specific time
 

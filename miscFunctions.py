@@ -5,7 +5,7 @@ contains misc helpful functions
 """
 import typing
 import datetime
-import dateTools.fuzzytime
+import dateTools.fuzzytime as fuzzytime
 
 
 # some handy constants
@@ -21,7 +21,8 @@ def humanTime(
     Turns a time like 7:44 into a rounded
     human-spoken time like "Quarter to eight"
 
-    :property quartersOny: if True, don't use "five till/after" and "ten till/after"
+    :property quartersOny: if True, don't use
+        "five till/after" and "ten till/after"
     """
     sectionNames={5:'Five',10:"Ten",15:"Quarter",30:"Half"}
     numberNames={0:"o'clock",1:'one',2:'two',3:'three',4:'four',5:'five',
@@ -166,15 +167,16 @@ def toTime(
             something=datetime.datetime.strptime(something,'%H:%M').time()
     elif hasattr(something,'time'): # also handles datetime objects
         something=something.time
-        if hasattr(something,'__call__'):
+        if callable(something):
             something=something()
     elif hasattr(something,'datetime'):
         something=something.datetime
-        if hasattr(something,'__call__'):
+        if callable(something):
             something=something()
         something=something.time()
     else:
-        raise Exception('Unable to convert "%s" to time.'%something.__class__.__name__)
+        className=something.__class__.__name__
+        raise Exception(f'Unable to convert "{className}" to time.')
     return something
 
 
@@ -188,7 +190,7 @@ def timeDeltaInUnits(
     :timeDelta: can be anything that toTimeDelta() supports
     :property inUnits: can be 'days', 'hours', 'minutes', 'seconds',
         or 'hms' for string format like "1d 5h 3m 21s"
-        (string format is very forgiving - anything that starts with 'd','h','m','s')
+        (very forgiving - anything that starts with 'd','h','m','s')
         if None, returns a datetime.timedelta
     """
     if not isinstance(timeDelta,datetime.timedelta):
@@ -232,7 +234,7 @@ def unitsInTimdelta(
     :property units: expects an int or float, but can also be a string -
         possibly with inUnits included (eg. "5h")
     :property inUnits: can be 'days', 'hours', 'minutes', or 'seconds'
-        (string format is very forgiving - anything that starts with 'd','h','m','s')
+        (format is very forgiving - anything that starts with 'd','h','m','s')
         if None, returns a datetime.timedelta
     """
     if isinstance(units,str):
@@ -257,7 +259,8 @@ def inDays(
     """
     returns the timedelta in total minutes
 
-    :property timeDelta: can be a datetime.timedelta, or anything that toTimeDelta() supports
+    :property timeDelta: can be a datetime.timedelta,
+        or anything that toTimeDelta() supports
     """
     return timeDeltaInUnits(timeDelta,'d')
 
@@ -268,7 +271,8 @@ def inHours(
     """
     returns the timedelta in total minutes
 
-    :property timeDelta: can be a datetime.timedelta, or anything that toTimeDelta() supports
+    :property timeDelta: can be a datetime.timedelta,
+        or anything that toTimeDelta() supports
     """
     return timeDeltaInUnits(timeDelta,'h')
 
@@ -279,7 +283,8 @@ def inMinutes(
     """
     returns the timedelta in total minutes
 
-    :property timeDelta: can be a datetime.timedelta, or anything that toTimeDelta() supports
+    :property timeDelta: can be a datetime.timedelta,
+        or anything that toTimeDelta() supports
     """
     return timeDeltaInUnits(timeDelta,'m')
 
@@ -290,7 +295,8 @@ def inSeconds(
     """
     returns the timedelta in total seconds
 
-    :property timeDelta: can be a datetime.timedelta, or anything that toTimeDelta() supports
+    :property timeDelta: can be a datetime.timedelta,
+        or anything that toTimeDelta() supports
     """
     return timeDeltaInUnits(timeDelta,'s')
 
@@ -379,19 +385,21 @@ def dayFromString(day:str)->int:
 
 numericFamilies=('hundred','thousand','million','billion','trillion')
 numericFamConv=(100,1000,1000000,1000000000,1000000000)
-numerics=('zero','one','two','three','four','five','six','seven','eight','nine',
-    'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen',
-    'seventeen','eighteen','nineteen')
-decades=[None,None,'twenty','thirty','fourty','fifty','sixty','seventy','eighty','ninety']
-numericPlaces=('none','first','second','third','fourth','fifth','sixth','seventh','eighth','nineth',
-    'tenth','eleventh','twelfth')
+numerics=('zero','one','two','three','four','five','six','seven','eight',
+    'nine','ten','eleven','twelve','thirteen','fourteen','fifteen',
+    'sixteen','seventeen','eighteen','nineteen')
+decades=[None,None,'twenty','thirty','fourty','fifty',
+    'sixty','seventy','eighty','ninety']
+numericPlaces=('none','first','second','third','fourth','fifth','sixth',
+    'seventh','eighth','nineth','tenth','eleventh','twelfth')
 def numberToText(
     number:int,
     place:bool=False
     )->str:
     """
     convert a number to text, eg
-        1,225,819 => "one million, two hundred twenty five thousand, eight hundred nineteen"
+        1,225,819 =>
+        "one million, two hundred twenty five thousand, eight hundred nineteen"
 
     :property place: if True, say "twenty-third" instead of "twenty three"
     """
@@ -469,7 +477,8 @@ def numberdecode(number:str)->float:
     """
     acc=0
     for match in numberDetectRe().finditer(number):
-        #print('"%s" matched to "%s"'%(number,number[match.start():match.end()]))
+        #print('"%s" matched to "%s"'%
+        #   (number,number[match.start():match.end()]))
         val=0
         digits=match.group('digits')
         if digits is not None:
