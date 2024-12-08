@@ -6,7 +6,6 @@ This tool allows dates formatted like "mon 8:00-8:30AM,tue-sat 1:00-5:00PM"
 import typing
 import datetime
 import re
-from rangeTools import Range
 from paths import URLCompatible
 from jsonSerializeable import JsonSerializeable
 from rangeTools import Range,Ranges
@@ -20,12 +19,19 @@ RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
 ComparableDatetimeCompatible=typing.Union[datetime.datetime,int,float,"ComparableDatetime"]
 ComparableDateTimeCompatible=ComparableDatetimeCompatible
 def asComparableDatetime(cdt:ComparableDatetimeCompatible)->"ComparableDatetime":
+    """
+    Creates and returns a ComparableDateTime based on cdt,
+    or if it already is one, simply return it
+    """
     if isinstance(cdt,ComparableDatetime):
         return cdt
     return ComparableDatetime(cdt)
 asComparableDateTime=asComparableDatetime
 
 class ComparableDatetime:
+    """
+    Make datetimes comparable
+    """
     def __init__(self,cdt:ComparableDatetimeCompatible):
         if isinstance(cdt,(int,float)):
             cdt=datetime.datetime.fromtimestamp(cdt)
@@ -35,6 +41,9 @@ class ComparableDatetime:
 
     @property
     def timestamp(self)->float:
+        """
+        this, as a unix time timestamp
+        """
         return datetime.datetime.timestamp(self.datetime)
     @timestamp.setter
     def timestamp(self,timestamp:float):
@@ -64,8 +73,14 @@ class ComparableDatetime:
 ComparableDateTime=ComparableDatetime
 
 
-DateRangeSimpleCompatible=typing.Union[ComparableDatetime,typing.Tuple[ComparableDatetime,ComparableDatetime],"DateRangeSimple"]
+DateRangeSimpleCompatible=typing.Union[
+    ComparableDatetime,typing.Tuple[ComparableDatetime,ComparableDatetime],
+    "DateRangeSimple"]
 def asDateRangeSimple(dateRange:DateRangeSimpleCompatible)->"DateRangeSimple":
+    """
+    Always returns a DateRangeSimple.  Either creates from the passed in dateRange
+    or if it already is one, simply return it.
+    """
     if isinstance(dateRange,DateRangeSimple):
         return dateRange
     if isinstance(dateRange,tuple):
@@ -78,7 +93,9 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
     """
 
     def __init__(self,
-        low:typing.Union[ComparableDatetimeCompatible,typing.Tuple[ComparableDatetimeCompatible,ComparableDatetimeCompatible]],
+        low:typing.Union[
+            ComparableDatetimeCompatible,
+            typing.Tuple[ComparableDatetimeCompatible,ComparableDatetimeCompatible]],
         high:typing.Optional[ComparableDatetimeCompatible]=None,
         step:typing.Optional[ComparableDatetimeCompatible]=None,
         center:typing.Optional[ComparableDatetimeCompatible]=None,
@@ -92,7 +109,7 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
         """
         Range.__init__(self,low,high,step,center,lowInclusive,highInclusive,ComparableDatetime)
 
-class DateRange(JsonSerializeable,Range[datetime.datetime]):
+class DateRange(JsonSerializeable,Range[datetime.datetime,typing.Union[str,datetime.datetime]]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"
@@ -151,7 +168,7 @@ class DateRange(JsonSerializeable,Range[datetime.datetime]):
         self._toTime=None
         self.timeFormat="%I:%M%p"
         JsonSerializeable.__init__(self,filename,jsonObj)
-        Range[datetime.datetime].__init__(self,rangestring)
+        Range[datetime.datetime,typing.Union[str,datetime.datetime]].__init__(self,rangestring)
         if rangestring is not None:
             self.assign(rangestring)
 
@@ -389,6 +406,10 @@ class DateRange(JsonSerializeable,Range[datetime.datetime]):
 
     @property
     def duration(self)->datetime.timedelta:
+        """
+        How long this range is
+        :rtype: datetime.timedelta
+        """
         return self.end-self.start
     @property
     def hours(self)->float:

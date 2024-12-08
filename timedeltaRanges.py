@@ -7,7 +7,7 @@ from rangeTools import Range
 import dateTools
 
 
-class TimeDeltaRange(Range[datetime.timedelta]):
+class TimeDeltaRange(Range[datetime.timedelta,datetime.timedelta]):
     """
     Specify ranges in timedelta form, for example "3-5 days"
 
@@ -19,6 +19,7 @@ class TimeDeltaRange(Range[datetime.timedelta]):
         maximum:typing.Optional[dateTools.TimeDeltaCompatible]=None,
         center:typing.Union[None,dateTools.TimeDeltaCompatible,"TimeDeltaRange"]=None):
         """ """
+        Range.__init__(self)
         self.minimum:dateTools.TimeDelta=dateTools.TimeDelta(minimum)
         self.maximum:dateTools.TimeDelta=self.minimum
         if maximum is not None:
