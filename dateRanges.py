@@ -127,7 +127,7 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
 
 class DateRange(
     JsonSerializeable,
-    Range[datetime.datetime,typing.Union[str,datetime.datetime]]):
+    Range[datetime.datetime,typing.Union[str,datetime.datetime,datetime.date]]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"

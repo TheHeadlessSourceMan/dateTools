@@ -28,6 +28,7 @@ def yearRange(
     return DateRange(
         (datetime.datetime(fromYear,1,1,0,0,0),
         datetime.datetime(toYear,12,31,23,59,59)))
+
 def yearBefore(
     when:typing.Union[None,int,datetime.datetime,"DateRange"]=None
     )->DateRange:

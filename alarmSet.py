@@ -76,6 +76,23 @@ class Alarm(FunctionCall):
         self._time:datetime.datetime=time
 
     @property
+    def elapsed(self)->bool:
+        """
+        Determine if the alarm has elapsed
+        """
+        return self._time<datetime.datetime.now()
+
+    @property
+    def nextAlarm(self)->typing.Optional["Alarm"]:
+        """
+        Get the next occourance of this alarm
+        (Can be None if it will never expire again)
+        """
+        if self.elapsed:
+            return None
+        return self
+
+    @property
     def time(self)->typing.Optional[datetime.datetime]:
         """
         Get the current alarm timestamp

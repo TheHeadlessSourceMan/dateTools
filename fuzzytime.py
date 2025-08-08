@@ -8,7 +8,7 @@ Decode a time from within a freeform string, for example:
     * the week before thanksgiving
 """
 import typing
-from datetime import datetime,timedelta
+import datetime
 
 
 class FuzzyTime:
@@ -30,19 +30,19 @@ class FuzzyTime:
             * the third saturday of october
             * the week before thanksgiving
         """
-        self.startTime:datetime=datetime.now()
-        self.endTime:datetime=datetime.now()
+        self.startTime:datetime.datetime=datetime.datetime.now()
+        self.endTime:datetime.datetime=datetime.datetime.now()
         if timestring is not None:
             self.assign(timestring)
 
     @property
-    def timedelta(self)->timedelta:
+    def timedelta(self)->datetime.timedelta:
         """
         the time difference between start and end
         """
         return self.endTime-self.startTime
     @timedelta.setter
-    def timedelta(self,delta:timedelta):
+    def timedelta(self,delta:datetime.timedelta):
         self.assign(delta)
 
     def setTime(self,timestring:str)->None:
@@ -57,37 +57,37 @@ class FuzzyTime:
         """
         timestring=timestring.lower().replace(' ago','')
         tokens=self._tokenize(timestring)
-        lastNumeric=None
+        lastNumeric=0
         for token in tokens:
             if token[-1]=='s':
                 token=token[0:-1]
             elif (token[0]>='0' and token[0]<='9') or token[0]=='.':
                 lastNumeric=float(token)
             elif token in ('sec','second'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()-timedelta(seconds=lastNumeric)
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()-datetime.timedelta(seconds=lastNumeric)
             elif token in ('min','minute'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()-timedelta(minutes=lastNumeric)
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()-datetime.timedelta(minutes=lastNumeric)
             elif token in ('hr','hour'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()-timedelta(hours=lastNumeric)
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()-datetime.timedelta(hours=lastNumeric)
             elif token in ('dy','day'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()-timedelta(days=lastNumeric)
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()-datetime.timedelta(days=lastNumeric)
             elif token in ('wk','week'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()-timedelta(weeks=lastNumeric)
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()-datetime.timedelta(weeks=lastNumeric)
             elif token in ('mt','mth','month'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()
                 self.endTime=self.endTime.replace(
                     year=int((self.endTime.month+lastNumeric)/12))
                 self.endTime=self.endTime.replace(
                     month=(self.endTime.month+lastNumeric)%12)
             elif token in ('yr','year'):
-                self.startTime=datetime.now()
-                self.endTime=datetime.now()
+                self.startTime=datetime.datetime.now()
+                self.endTime=datetime.datetime.now()
                 self.endTime=self.endTime.replace(
                     year=self.endTime.year+lastNumeric)
 
@@ -131,11 +131,12 @@ class FuzzyTime:
         if isinstance(other,FuzzyTime):
             return self.startTime!=other.startTime \
                 or self.endTime!=other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime!=other or self.endTime!=other
 
-    def __eq__(self,other:"FuzzyTime")->bool:
+    def __eq__(self, # type: ignore
+        other:"FuzzyTime")->bool:
         """
         comparison operator
         """
@@ -144,8 +145,8 @@ class FuzzyTime:
         if isinstance(other,FuzzyTime):
             return self.startTime==other.startTime \
                 and self.endTime==other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime<=other<=self.endTime
 
     def __lt__(self,other:"FuzzyTime")->bool:
@@ -156,8 +157,8 @@ class FuzzyTime:
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
             return self.startTime<other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime<other
 
     def __le__(self,other:"FuzzyTime")->bool:
@@ -169,8 +170,8 @@ class FuzzyTime:
         if isinstance(other,FuzzyTime):
             return self.startTime<=other.startTime \
                 or self.endTime<=other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime<=other
 
     def __gt__(self,other:"FuzzyTime")->bool:
@@ -181,8 +182,8 @@ class FuzzyTime:
             other=FuzzyTime(other)
         if isinstance(other,FuzzyTime):
             return self.startTime>other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime>other
 
     def __ge__(self,other:"FuzzyTime")->bool:
@@ -194,8 +195,8 @@ class FuzzyTime:
         if isinstance(other,FuzzyTime):
             return self.startTime>=other.startTime \
                 or self.endTime>=other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime>=other
 
     def __contains__(self,other:"FuzzyTime")->bool:
@@ -207,8 +208,8 @@ class FuzzyTime:
         if isinstance(other,FuzzyTime):
             return self.startTime>=other.startTime \
                 or self.endTime>=other.endTime
-        if not isinstance(other,datetime):
-            other=datetime(other)
+        if not isinstance(other,datetime.datetime):
+            other=datetime.datetime(other)
         return self.startTime>=other>=self.endTime
 
     def __repr__(self)->str:
@@ -252,6 +253,8 @@ def cmdline(args:typing.Iterable[str])->int:
         print('USAGE:\n\tfuzzytime.py [options] text_to_decipher [...]')
         print('OPTIONS:')
         print('\t--help ................ print this help')
+        return -1
+    return 0
 
 
 if __name__=='__main__':
