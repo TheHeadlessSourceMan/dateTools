@@ -542,7 +542,7 @@ class DateRanges(JsonSerializeable,Ranges):
         """
         this object as a json-compatible object
         """
-        return [dr.jsonObj for dr in self.dateRanges]
+        return [dr.jsonObj for dr in self.dateRanges] # type: ignore
     @jsonObj.setter
     def jsonObj(self,
         jsonObj:typing.Union[None,str,typing.Dict[str,typing.Any]]):
@@ -551,13 +551,36 @@ class DateRanges(JsonSerializeable,Ranges):
         """
         if isinstance(jsonObj,str):
             self.assign(jsonObj)
-        self.dateRanges=[DateRange(jsonObj=o) for o in jsonObj]
+        self.dateRanges=[DateRange(jsonObj=o) for o in jsonObj] # type: ignore
 
-    def assign(self,rangestring:str)->None:
+    def assign(self,
+        ranges:typing.Union[
+            str,datetime.datetime,DateRange,"DateRanges",
+            typing.Iterable[typing.Union[str,datetime.datetime,DateRange,"DateRanges"]]]
+        )->None:
         """
         assign the values of these date ranges
         """
-        self.dateRanges=[DateRange(dr) for dr in rangestring.split(',')]
+        self.dateRanges=[]
+        self.append(ranges)
+
+    def append(self, # type: ignore
+        ranges:typing.Union[
+            str,datetime.datetime,DateRange,"DateRanges",
+            typing.Iterable[typing.Union[str,datetime.datetime,DateRange,"DateRanges"]]]
+        )->None:
+        """
+        add more values of these date ranges
+        """
+        if isinstance(ranges,str):
+            self.dateRanges.extend([DateRange(dr) for dr in ranges.split(',')])
+        elif isinstance(ranges,datetime.datetime):
+            self.dateRanges.append(DateRange(ranges))
+        else:
+            for moreRanges in ranges:
+                self.append(moreRanges)
+    add=append
+    extend=append
 
     def timeUntilNext(self,
         fromDate:typing.Optional[datetime.date]=None,
