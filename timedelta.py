@@ -9,7 +9,6 @@ import datetime
 TimeDeltaCompatible=typing.Union[
     "TimeDelta",datetime.timedelta,str,typing.Tuple[float,str]]
 
-
 class TimeDelta(datetime.timedelta):
     """
     Represents the difference between two times
@@ -30,6 +29,18 @@ class TimeDelta(datetime.timedelta):
         self._shadowedTimedelta:datetime.timedelta
         self._units:typing.Optional[str]=None
         self.assign(td,units,hours,minutes,seconds,businessDays)
+
+    def __new__(cls, # pylint: disable=signature-differs
+        td:typing.Optional[TimeDeltaCompatible]=None,
+        units:typing.Optional[str]=None,
+        hours:float=0,
+        minutes:float=0,
+        seconds:float=0,
+        businessDays:float=0)->"TimeDelta":
+        """
+        Needs to be here to shadow timedelta.__new__
+        """
+        return super().__new__(cls)
 
     def assign(self,
         td:typing.Optional[TimeDeltaCompatible]=None,
@@ -122,7 +133,7 @@ class TimeDelta(datetime.timedelta):
         if isinstance(units,TimeDelta):
             units=units.units
         else:
-            units=self._unitsToStd(units)
+            _,units=self._unitsToStd(units)
         if self._units!=units:
             if self._units is not None and self._amount is not None:
                 raise Exception("This is broken")
@@ -146,7 +157,7 @@ class TimeDelta(datetime.timedelta):
 
     def _unitsToStd(self,s:str)->typing.Tuple[float,str]:
         mapping=[
-            ('mo','months',(30,'days')),
+            ('mo','months',(30.0,'days')),
             ('mic','microseconds',(1,'microseconds')),
             ('ms','milliseconds',(100,'microseconds')),
             ('min','minutes',(60,'seconds')),
@@ -178,7 +189,7 @@ class TimeDelta(datetime.timedelta):
         """
         return a copy of this object
         """
-        return TimeDelta(self)
+        return TimeDelta(self) # type: ignore
 
     @property
     def seconds(self)->float: # type: ignore
