@@ -13,9 +13,24 @@ TODO: unfinished and experimental
 import typing
 import datetime
 import re
-import dateTools
 from .ordinalIndicators import ordinalIndicators
+if typing.TYPE_CHECKING:
+    from .date import Date
+    from .time import Time
+    from .dateTime import DateTime
+    from dateTools import (
+        #dateToolsDateTime,
+        DateRange,#TimeRange,DateTimeRange,
+        SparseDate,#SparseTime,SparseDateTime
+        )
 
+
+ParserResult=typing.Union[
+    "Date","Time","DateTime",
+    #dateToolsDateTime,
+    "DateRange",#TimeRange,DateTimeRange,
+    "SparseDate",#SparseTime,SparseDateTime,
+    None]
 
 class Parser:
     """
@@ -47,7 +62,7 @@ class Parser:
         'uuuu',#ADAMWEST
         ]
 
-    def findTextCase(self,s):
+    def findTextCase(self,s:str)->str:
         """
         given a word pair, determine text case
 
@@ -79,10 +94,7 @@ class Parser:
     def parse(self,
         s:str="tuesday,may 3",
         referenceDate:typing.Optional[datetime.date]=None
-        )->typing.Union[dateTools.Date,dateTools.Time,dateTools.dateToolsDateTime,
-            dateTools.DateRange,dateTools.TimeRange,dateTools.DateTimeRange,
-            dateTools.SparseDate,dateTools.SparseTime,dateTools.SparseDateTime,
-            None]:
+        )->ParserResult:
         """
         Parse a date string
 
