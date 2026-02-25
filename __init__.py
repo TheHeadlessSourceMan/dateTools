@@ -19,6 +19,7 @@ from .timestamp import *
 from .date import *
 from .time import *
 from .dateTime import *
+from .windowsFileTime import *
 date=Date
 time=Time
 datetime=DateTime
