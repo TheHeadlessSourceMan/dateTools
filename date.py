@@ -23,19 +23,17 @@ def asDate(date:DateCompatible)->"Date":
     if isinstance(date,Date):
         return date
     return Date(date)
+class DateMeta(type):
+    """
+    Metaclass for declaring that Date is a datetime.date
+    """
+    def __instancecheck__(cls,instance)->bool:
+        return instance in (datetime.date,Date) # pylint: disable=no-member
 
-
-class Date(
-    datetime.date): # pylint: disable=no-member
+class Date(metaclass=DateMeta):
     """
     Extended version of the datetime object
     """
-    def __new__(cls,*args,**kwargs)->"Date":
-        """
-        Need to override this so datetime.date.__new__() is not called
-        """
-        return super().__new__(cls,*args,**kwargs)
-
     def __init__(self,date:typing.Optional[DateCompatible]=None):
         self._date:datetime.date # pylint: disable=no-member
         self.assign(date)

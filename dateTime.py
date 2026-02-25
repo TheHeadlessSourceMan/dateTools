@@ -5,7 +5,7 @@ import typing
 import datetime
 from .date import Date
 from .time import Time
-from .timestamp import TimestampCompatible,asTimestamp
+from .timestamp import Timestamp,TimestampCompatible,asTimestamp
 
 
 DateTimeCompatible=typing.Union[
@@ -32,31 +32,52 @@ def asDateTime(dateTime:typing.Optional[DateTimeCompatible])->"DateTime":
         return dateTime
     return DateTime(dateTime)
 
-
+class DateTimeMeta(type):
+    """
+    Metaclass for declaring that DateTime is a datetime.datetime
+    """
+    def __instancecheck__(cls,instance)->bool:
+        return instance in (DateTime,
+            datetime.datetime,datetime.time,datetime.date, # pylint: disable=no-member
+            Date,Time)
 class DateTime( # pylint: disable=inherit-non-class # type: ignore
-    Date,Time,
-    datetime.datetime):
+    metaclass=DateTimeMeta):
     """
     Extended version of datetime.datetime object
     """
-    def __new__(cls,*args,**kwargs)->"DateTime":
-        """
-        Need to override this so datetime.datetime.__new__() is not called
-        """
-        return super().__new__(cls,*args,**kwargs) # type: ignore
-
     def __init__(self,dateTime:typing.Optional[DateTimeCompatible]=None):
-        Date.__init__(self)
-        Time.__init__(self)
+        self._datetime:datetime.datetime
         if dateTime is not None:
             self.assign(dateTime)
 
+    def timestamp(self)->Timestamp:
+        """
+        Return a timestamp value
+        """
+        return asTimestamp(self._datetime.timestamp())
+
     @property
-    def datetime(self)->"DateTime":
+    def datetime(self)->datetime.datetime:
         """
         Identity
         """
-        return self
+        return self._datetime
+
+    @property
+    def date(self)->Date:
+        """
+        Get this as a Date
+        (so, essentially just the day without hours/minutes/seconds)
+        """
+        return Date(self.timestamp())
+
+    @property
+    def time(self)->Time:
+        """
+        Get this as a Date
+        (so, essentially just the time without day)
+        """
+        return Time(self.timestamp())
 
     def min(self, # type: ignore
         other:DateTimeCompatible
@@ -94,11 +115,10 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
         elif isinstance(dateTime,(int,float)):
             dateTime=datetime.datetime.fromtimestamp(dateTime) # pylint: disable=no-member
         if isinstance(dateTime,datetime.datetime): # pylint: disable=isinstance-second-argument-not-valid-type,no-member
-            self._date=datetime.date( # pylint: disable=no-member
-                dateTime.year,dateTime.month,dateTime.day)
-            self._time=datetime.time( # pylint: disable=no-member
-                dateTime.hour,dateTime.minute,dateTime.second,dateTime.microsecond,
-                dateTime.tzinfo,fold=dateTime.fold)
+            if hasattr(dateTime,'datetime'):
+                self.assign(typing.cast(DateTime,dateTime).datetime)
+            else:
+                self._datetime=dateTime
         elif isinstance(dateTime,str):
             from .megaParse import Parser,ParserResult
             parseResult:ParserResult=Parser().parse(dateTime)

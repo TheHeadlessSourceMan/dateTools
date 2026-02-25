@@ -27,17 +27,16 @@ def asTime(time:"TimeCompatible")->"Time":
     return Time(time)
 
 
-class Time(
-    datetime.time): # pylint: disable=no-member
+class TimeMeta(type):
+    """
+    Metaclass for declaring that Time is a datetime.time
+    """
+    def __instancecheck__(cls,instance)->bool:
+        return instance in (datetime.time,Time) # pylint: disable=no-member
+class Time(metaclass=TimeMeta):
     """
     Extended version of the datetime.time object
     """
-    def __new__(cls,*args,**kwargs)->"Time":
-        """
-        Need to override this so datetime.time.__new__() is not called
-        """
-        return super().__new__(cls,*args,**kwargs)
-
     def __init__(self,time:typing.Optional["TimeCompatible"]=None):
         self._time:datetime.time # pylint: disable=no-member
         if time is not None:
