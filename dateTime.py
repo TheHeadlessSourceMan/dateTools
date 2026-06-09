@@ -10,6 +10,7 @@ from .timestamp import Timestamp,TimestampCompatible,asTimestamp
 
 DateTimeCompatible=typing.Union[
     datetime.date,datetime.time,datetime.datetime, # pylint: disable=no-member
+    "DateTime",Date,Time,
     str,TimestampCompatible]
 
 class HasDateTime(typing.Protocol):
