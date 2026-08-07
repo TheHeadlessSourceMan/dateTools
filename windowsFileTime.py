@@ -2,12 +2,13 @@
 Type information for windows file time timestamps
 """
 import typing
-from timestamp import Timestamp,TimestampCompatible,asTimestamp
+from dateTools import Timestamp,TimestampCompatible,asTimestamp
 if typing.TYPE_CHECKING:
     from .dateTime import DateTime,DateTimeCompatible
 
 
-WindowsFileTimestampCompatible=typing.Union[float,int,"WindowsFileTimestamp",TimestampCompatible]
+WindowsFileTimestampCompatible=typing.Union[
+    float,int,"WindowsFileTimestamp",TimestampCompatible]
 WindowsFileTimeCompatible=WindowsFileTimestampCompatible
 WindowsTimestampCompatible=WindowsFileTimestampCompatible
 def asWindowsFileTimestamp(
@@ -30,10 +31,12 @@ class WindowsFileTimestamp:
     Track a windows timestamp with convenient
     conversion to/from posix timestamp and datetime
     """
-    WINDOWS_EPOCH=116444736000000000  # Windows FILETIME epoch in 100-nanosecond intervals
-    HUNDRED_NANOSECONDS=10000000  # Number of 100-nanosecond intervals in one second
+    WINDOWS_EPOCH=116444736000000000  # Windows FILETIME epoch in 100-nanosecond intervals # noqa: E501
+    HUNDRED_NANOSECONDS=10000000  # Number of 100-nanosecond intervals in one second # noqa: E501
 
-    def __init__(self,value:typing.Optional[WindowsFileTimestampCompatible]=None):
+    def __init__(self,
+        value:typing.Optional[WindowsFileTimestampCompatible]=None):
+        """ """
         self._value:float=0
         self.assign(value)
 
@@ -47,7 +50,8 @@ class WindowsFileTimestamp:
     def value(self,value:typing.Optional[WindowsFileTimestampCompatible]):
         self.assign(value)
 
-    def assign(self,value:typing.Optional[WindowsFileTimestampCompatible]=None):
+    def assign(self,
+        value:typing.Optional[WindowsFileTimestampCompatible]=None):
         """
         Assign the value of this timestamp
         """
@@ -66,7 +70,8 @@ class WindowsFileTimestamp:
         """
         if self._value<self.WINDOWS_EPOCH:
             raise ValueError("FILETIME value is out of range.")
-        return asTimestamp((self._value-self.WINDOWS_EPOCH)//self.HUNDRED_NANOSECONDS)
+        return asTimestamp((
+            self._value-self.WINDOWS_EPOCH)//self.HUNDRED_NANOSECONDS)
     @posixtime.setter
     def posixtime(self,value:TimestampCompatible):
         value=asTimestamp(value)
