@@ -7,7 +7,7 @@ import typing
 import datetime
 import re
 from paths import URLCompatible
-from jsonSerializeable import JsonSerializeable
+from jsonSerializable import JsonSerializable
 from rangeTools import Range,Ranges
 import dateTools.miscFunctions as miscFunctions
 from dateTools.calendarNames import WeekdayAbbrs,MonthAbbrs
@@ -126,8 +126,9 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
             ComparableDatetime)
 
 class DateRange(
-    JsonSerializeable,
-    Range[datetime.datetime,typing.Union[str,datetime.datetime,datetime.date]]):
+    JsonSerializable,
+    Range[datetime.datetime,
+        typing.Union[str,datetime.datetime,datetime.date]]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"
@@ -189,11 +190,11 @@ class DateRange(
         self._time=None
         self._toTime=None
         self.timeFormat="%I:%M%p"
-        JsonSerializeable.__init__(self,filename,jsonObj)
+        JsonSerializable.__init__(self,filename,jsonObj)
         Range[datetime.datetime,typing.Union[str,datetime.datetime]]\
-            .__init__(self,rangestring)
-        if rangestring is not None:
-            self.assign(rangestring)
+            .__init__(self,dateRange)
+        if dateRange is not None:
+            self.assign(dateRange)
 
     def clear(self)->None:
         """
@@ -311,7 +312,7 @@ class DateRange(
         # decode months
         month=m.group('month')
         if month is not None:
-            self.month=self.MONTHLIST.index(month[0:3].lower())+1
+            self.month=MONTHLIST.index(month[0:3].lower())+1
             monthDay=m.group('monthDay')
             if monthDay is not None:
                 self.monthDay=int(miscFunctions.numberdecode(monthDay))
@@ -320,7 +321,7 @@ class DateRange(
             if toMonth is None:
                 self.toMonth=self.month
             else:
-                self.toMonth=self.MONTHLIST.index(toMonth[0:3].lower())
+                self.toMonth=MONTHLIST.index(toMonth[0:3].lower())
                 toMonthDay=m.group('toMonthDay')
                 if toMonthDay is not None:
                     self.toMonthDay=int(miscFunctions.numberdecode(toMonthDay))
@@ -470,7 +471,7 @@ class DateRange(
         """
         name of the to month
         """
-        return MONTHLIST[self.toMonth-1]
+        return self.MONTHLIST[self.toMonth-1]
 
     @property
     def text(self)->str:
@@ -517,7 +518,7 @@ class DateRange(
         return self.text
 DatetimeRange=DateRange
 
-class DateRanges(JsonSerializeable,Ranges):
+class DateRanges(JsonSerializable,Ranges):
     """
     A set of date range objects.
 
@@ -533,7 +534,7 @@ class DateRanges(JsonSerializeable,Ranges):
         """ """
         self.dateRanges:typing.List[DateRange]=[]
         Ranges.__init__(self)
-        JsonSerializeable.__init__(self,filename,jsonObj)
+        JsonSerializable.__init__(self,filename,jsonObj)
         if rangestring:
             self.assign(rangestring)
 
@@ -556,7 +557,8 @@ class DateRanges(JsonSerializeable,Ranges):
     def assign(self,
         ranges:typing.Union[
             str,datetime.datetime,DateRange,"DateRanges",
-            typing.Iterable[typing.Union[str,datetime.datetime,DateRange,"DateRanges"]]]
+            typing.Iterable[typing.Union[
+                str,datetime.datetime,DateRange,"DateRanges"]]]
         )->None:
         """
         assign the values of these date ranges
@@ -567,7 +569,8 @@ class DateRanges(JsonSerializeable,Ranges):
     def append(self, # type: ignore
         ranges:typing.Union[
             str,datetime.datetime,DateRange,"DateRanges",
-            typing.Iterable[typing.Union[str,datetime.datetime,DateRange,"DateRanges"]]]
+            typing.Iterable[typing.Union[
+                str,datetime.datetime,DateRange,"DateRanges"]]]
         )->None:
         """
         add more values of these date ranges
