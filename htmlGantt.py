@@ -58,12 +58,11 @@ class GanttChart:
         minDate=min(entry.range.fromTime for entry in entries)
         maxDate=max(entry.range.toTime for entry in entries)
         dateSpan=maxDate-minDate
-        totalDays=dateSpan.numDays
         html=['<table class="gantt-chart">']
         for entry in self.entries:
             html.append(f'<tr><td>{entry.name}</td>')
             spaceBefore=dateSpan*entry.range.start.distance(minDate)
-            size=entry.range.numDays
+            size=entry.range.totalDays
             html.append(f'<td colspan={int(spaceBefore)}></td>')
             html.append(f'<td colspan={int(size)} style="background-color:{entry.color}"></td>')
             html.append('</tr>')

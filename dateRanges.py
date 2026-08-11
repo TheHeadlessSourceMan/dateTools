@@ -13,7 +13,7 @@ from .calendarNames import DaysOfWeekTwoLetter
 from .months import MonthAbbrs,Months
 from .dateTime import asDateTime,DateTime,DateTimeCompatible
 from .miscFunctions import (
-    numberDetectRe,reWithoutNames,toTime,timeDeltaInUnits)
+    numberDetectRe,reWithoutNames,timeDeltaInUnits)
 
 
 RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
@@ -133,8 +133,8 @@ class DateRangeSimple(
 DateRangeCompatible=typing.Union[
     str,
     "DateRange",
-    datetime.datetime,
-    typing.Tuple[datetime.datetime,datetime.datetime]]
+    DateTimeCompatible,
+    typing.Tuple[DateTimeCompatible,DateTimeCompatible]]
 def asDateRange(dateRange:DateRangeCompatible):
     """
     if dateRange is a DateRange object, simply return it
@@ -203,16 +203,19 @@ class DateRange(
         self.toMonthDay=32 # allowed to be higher than the month can handle
         self.weekday=0 # 0=Sunday,1=Monday, etc
         self.toWeekday=6
-        self._time:typing.Optional[
-            typing.Union[datetime.time,datetime.datetime]
-        ]=None
-        self._toTime:typing.Optional[
-            typing.Union[datetime.time,datetime.datetime]
-        ]=None
+        self._time:typing.Optional[DateTime]=None
+        self._toTime:typing.Optional[DateTime]=None
         self.timeFormat="%I:%M%p"
         JsonSerializable.__init__(self,filename,jsonObj)
-        Range[datetime.datetime,typing.Union[str,datetime.datetime]]\
-            .__init__(self,dateRange)
+        now=asDateTime(datetime.datetime.now())
+        self._low:typing.Optional[DateTime]=now
+        self._high:typing.Optional[DateTime]=now
+        self._center:typing.Optional[DateTime]=None
+        self._step:typing.Optional[DateTime]=None
+        self.elementFactory=asDateTime
+        self.lowInclusive=True
+        self.highInclusive=False
+        self.reset()
         if dateRange is not None:
             self.assign(dateRange)
 
@@ -232,8 +235,12 @@ class DateRange(
         self.toMonthDay=32 # allowed to be higher than the month can handle
         self.weekday=0 # 0=Sunday,1=Monday, etc
         self.toWeekday=6
-        self.time=datetime.time.min
-        self.toTime=datetime.time.max
+        today=datetime.date.today()
+        self.time=datetime.datetime.combine(today,datetime.time.min)
+        self.toTime=datetime.datetime.combine(today,datetime.time.max)
+
+    def _clockTime(self,dateTime:DateTime)->datetime.time:
+        return dateTime.datetime.time()
 
     def strftime(self,fmt:str)->str:
         """
@@ -268,64 +275,44 @@ class DateRange(
         return ''.join(parts)
 
     @property
-    def time(self)->datetime.time:
+    def time(self)->DateTime:
         """
         the starting time
         """
         if self._time is None:
             if self._toTime is None:
-                return datetime.datetime.now().time()
-            if isinstance(self._toTime,datetime.datetime):
-                return self._toTime.time()
+                return asDateTime(datetime.datetime.now())
             return self._toTime
-        if isinstance(self._time,datetime.datetime):
-            return self._time.time()
         return self._time
     @time.setter
     def time(self,
-        val:typing.Any):
-        self._time=toTime(val)
+        val:DateTimeCompatible):
+        self._time=asDateTime(val)
+        self.low=self._time
 
     @property
-    def fromTime(self)->typing.Union[datetime.time,datetime.datetime]:
+    def fromTime(self)->DateTime:
         """
         the starting time
         """
-        if self._time is None:
-            return self.time
-        if isinstance(self._time,datetime.datetime):
-            return self._time
-        return self._time
+        return self.time
     @fromTime.setter
     def fromTime(self,
-        val:typing.Any):
-        if isinstance(val,datetime.datetime):
-            self._time=val
-            return
-        if hasattr(val,'datetime'):
-            self._time=asDateTime(val).datetime # type: ignore[arg-type]
-            return
+        val:DateTimeCompatible):
         self.time=val
 
     @property
-    def toTime(self)->typing.Union[datetime.time,datetime.datetime]:
+    def toTime(self)->DateTime:
         """
         the ending time
         """
         if self._toTime is None:
             return self.time
-        if isinstance(self._toTime,datetime.datetime):
-            return self._toTime
         return self._toTime
     @toTime.setter
-    def toTime(self,val:typing.Union[datetime.time,datetime.datetime]):
-        if isinstance(val,datetime.datetime):
-            self._toTime=val
-            return
-        if hasattr(val,'datetime'):
-            self._toTime=asDateTime(val).datetime # type: ignore[arg-type]
-            return
-        self._toTime=toTime(val)
+    def toTime(self,val:DateTimeCompatible):
+        self._toTime=asDateTime(val)
+        self.high=self._toTime
 
     @property
     def jsonObj(self)->typing.Dict[str,typing.Any]:
@@ -348,7 +335,8 @@ class DateRange(
             ret['weekday']=self.weekdayName
             if self.toWeekday!=self.weekday:
                 ret['toWeekday']=self.toWeekdayName
-        if self.time!=datetime.time.min or self.toTime!=datetime.time.max:
+        if self._clockTime(self.time)!=datetime.time.min \
+            or self._clockTime(self.toTime)!=datetime.time.max:
             ret['time']=self.time.strftime('%I:%M%p')
             if self.toTime!=self.time:
                 ret['toTime']=self.toTime.strftime('%I:%M%p')
@@ -382,11 +370,14 @@ class DateRange(
         if isinstance(dateRange,str):
             self._assignRangeString(dateRange)
             return
-        if isinstance(dateRange,datetime.datetime):
-            dateRange=(dateRange,dateRange)
+        rangeValues:typing.Tuple[DateTimeCompatible,DateTimeCompatible]
+        if isinstance(dateRange,tuple):
+            rangeValues=dateRange
+        else:
+            rangeValues=(dateRange,dateRange)
         self.reset()
-        self.fromTime=asDateTime(dateRange[0])
-        self.toTime=asDateTime(dateRange[1])
+        self.fromTime=rangeValues[0]
+        self.toTime=rangeValues[1]
 
     def _assignRangeString(self,rangestring:str)->None:
         self.reset()
@@ -408,7 +399,7 @@ class DateRange(
         day in this range
         """
         from dateTools.commonDateRanges import dayRange,dayAfter
-        d=dayRange(self.fromTime)
+        d=dayRange(self.fromTime.datetime)
         yield d
         while d<self.toTime:
             d=dayAfter(d)
@@ -419,7 +410,7 @@ class DateRange(
         week in this range
         """
         from dateTools.commonDateRanges import weekRange,weekAfter
-        d=weekRange(self.fromTime)
+        d=weekRange(self.fromTime.datetime)
         yield d
         while d<self.toTime:
             d=weekAfter(d)
@@ -430,7 +421,7 @@ class DateRange(
         of every month in this range
         """
         from dateTools.commonDateRanges import monthRange,monthAfter
-        d=monthRange(self.fromTime)
+        d=monthRange(self.fromTime.datetime)
         yield d
         while d<self.toTime:
             d=monthAfter(d)
@@ -441,15 +432,15 @@ class DateRange(
         year in this range
         """
         from dateTools.commonDateRanges import yearRange,yearAfter
-        d=yearRange(self.fromTime)
+        d=yearRange(self.fromTime.datetime)
         yield d
         while d<self.toTime:
             d=yearAfter(d)
             yield d
 
     def next(self,
-        afterDate:typing.Optional[datetime.date]=None
-        )->typing.Optional[datetime.date]:
+        afterDate:typing.Optional[DateTimeCompatible]=None
+        )->typing.Optional[datetime.datetime]:
         """
         next occourance from the given date
 
@@ -461,31 +452,36 @@ class DateRange(
         """
         if afterDate is None:
             afterDate=datetime.datetime.now()
+        else:
+            afterDate=asDateTime(afterDate).datetime
         startDay=afterDate.weekday()
         onDay=startDay
         while True:
             if self.weekday<=onDay<=self.toWeekday:
                 if onDay==startDay:
-                    if afterDate.time()<=self.toTime:
-                        if afterDate.time()>=self.time:
+                    if afterDate.time()<=self._clockTime(self.toTime):
+                        if afterDate.time()>=self._clockTime(self.time):
                             return afterDate # do it now!
                         # do it today, but awhile later
                         return datetime.datetime.combine(
-                            afterDate.date(),self.time)
+                            afterDate.date(),self._clockTime(self.time))
                 else:
                     nextDate=afterDate.date()
                     numdays=onDay-startDay
                     if numdays<0:
                         numdays+=7
                     nextDate=nextDate+datetime.timedelta(days=numdays)
-                    return datetime.datetime.combine(nextDate,self.time)
+                    return datetime.datetime.combine(
+                        nextDate,
+                        self._clockTime(self.time),
+                    )
             onDay=(onDay+1)%7 # try the next day
             if onDay==startDay: # we have checked every day
                 break
         return None
 
     def timeUntilNext(self,
-        fromDate:typing.Optional[datetime.date]=None,
+        fromDate:typing.Optional[DateTimeCompatible]=None,
         inUnits:typing.Optional[str]=None
         )->float:
         """

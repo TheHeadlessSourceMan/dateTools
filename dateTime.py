@@ -30,7 +30,7 @@ def asDateTime(dateTime:typing.Optional[DateTimeCompatible])->"DateTime":
     Always return a DateTime object.
     Create one if necessary.
     """
-    if isinstance(dateTime,DateTime):
+    if type(dateTime) is DateTime:
         return dateTime
     return DateTime(dateTime)
 
@@ -39,9 +39,10 @@ class DateTimeMeta(type):
     Metaclass for declaring that DateTime is a datetime.datetime
     """
     def __instancecheck__(cls,instance:typing.Any)->bool:
-        return instance in (DateTime,
-            datetime.datetime,datetime.time,datetime.date, # noqa: E501 # pylint: disable=no-member
-            Date,Time)
+        return type(instance) is DateTime or isinstance(
+            instance,
+            (datetime.datetime,datetime.time,datetime.date,Date,Time),
+        )
 class DateTime( # pylint: disable=inherit-non-class # type: ignore
     metaclass=DateTimeMeta):
     """
@@ -58,12 +59,21 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
         """
         return asTimestamp(self._datetime.timestamp())
 
+    def strftime(self,format:str)->str:
+        """
+        Return a string representation of this datetime object.
+        """
+        return self._datetime.strftime(format)
+
     @property
     def datetime(self)->datetime.datetime:
         """
         Identity
         """
         return self._datetime
+
+    def __getattr__(self,name:str)->typing.Any:
+        return getattr(self._datetime,name)
 
     @property
     def date(self)->Date:
@@ -125,6 +135,29 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
             ))
         raise TypeError(
             f'Unable to compare {other.__class__.__name__} to DateTime')
+
+    def __lt__(self,other:typing.Any)->bool:
+        return self.__cmp__(other)<0
+
+    def __le__(self,other:typing.Any)->bool:
+        return self.__cmp__(other)<=0
+
+    def __gt__(self,other:typing.Any)->bool:
+        return self.__cmp__(other)>0
+
+    def __ge__(self,other:typing.Any)->bool:
+        return self.__cmp__(other)>=0
+
+    def __eq__(self,other:object)->bool:
+        if not isinstance(other,(DateTime,datetime.datetime,datetime.date,datetime.time)):
+            return False
+        return self.__cmp__(typing.cast(typing.Any,other))==0
+
+    def __repr__(self)->str:
+        return repr(self._datetime)
+
+    def __str__(self)->str:
+        return str(self._datetime)
 
     def __sub__(self,other:typing.Any)->datetime.timedelta:
         """

@@ -207,12 +207,16 @@ class ParserTests(unittest.TestCase):
             with self.subTest(text=text):
                 result=self.parse(text)
                 self.assertIsInstance(result,DateRange)
+                self.assertTrue(hasattr(result.fromTime,'datetime'))
+                self.assertTrue(hasattr(result.toTime,'datetime'))
                 self.assertEqual(start,self.asDatetime(result.fromTime))
                 self.assertEqual(end,self.asDatetime(result.toTime))
 
     def test_simple_month_name_date_range(self)->None:
         result=self.parse('June 20 - July 1')
         self.assertIsInstance(result,DateRange)
+        self.assertTrue(hasattr(result.fromTime,'datetime'))
+        self.assertTrue(hasattr(result.toTime,'datetime'))
         self.assertEqual(
             datetime.datetime(2025,6,20,0,0,0),
             self.asDatetime(result.fromTime),
@@ -225,16 +229,8 @@ class ParserTests(unittest.TestCase):
     def test_fall_month_name_date_range(self)->None:
         result=self.parse('Oct 20 - Nov 15')
         self.assertIsInstance(result,DateRange)
-        self.assertTrue(
-            isinstance(result.fromTime,datetime.datetime) \
-            or hasattr(result.fromTime,'datetime'),
-            f'Expected datetime-like fromTime, got {result.fromTime!r}',
-        )
-        self.assertTrue(
-            isinstance(result.toTime,datetime.datetime) \
-            or hasattr(result.toTime,'datetime'),
-            f'Expected datetime-like toTime, got {result.toTime!r}',
-        )
+        self.assertTrue(hasattr(result.fromTime,'datetime'))
+        self.assertTrue(hasattr(result.toTime,'datetime'))
         self.assertEqual(
             datetime.datetime(2025,10,20,0,0,0),
             self.asDatetime(result.fromTime),
@@ -247,6 +243,8 @@ class ParserTests(unittest.TestCase):
     def test_august_to_sept_date_range(self)->None:
         result=self.parse('Aug 22 - Sept 7')
         self.assertIsInstance(result,DateRange)
+        self.assertTrue(hasattr(result.fromTime,'datetime'))
+        self.assertTrue(hasattr(result.toTime,'datetime'))
         self.assertEqual(
             datetime.datetime(2025,8,22,0,0,0),
             self.asDatetime(result.fromTime),
@@ -259,6 +257,9 @@ class ParserTests(unittest.TestCase):
     def test_compact_time_ranges_and_meridiem_inheritance(self)->None:
         result=self.parse('9-11pm')
         self.assertIsInstance(result,DateRange)
+        self.assertTrue(hasattr(result.time,'datetime'))
+        self.assertTrue(hasattr(result.fromTime,'datetime'))
+        self.assertTrue(hasattr(result.toTime,'datetime'))
         self.assertEqual(
             datetime.datetime(2025,1,15,21,0,0),
             self.asDatetime(result.fromTime),
@@ -282,6 +283,8 @@ class ParserTests(unittest.TestCase):
     def test_mixed_date_time_range(self)->None:
         result=self.parse('2025-03-10 to 4pm')
         self.assertIsInstance(result,DateRange)
+        self.assertTrue(hasattr(result.fromTime,'datetime'))
+        self.assertTrue(hasattr(result.toTime,'datetime'))
         self.assertEqual(
             datetime.datetime(2025,3,10,0,0,0),
             self.asDatetime(result.fromTime),
