@@ -1,6 +1,7 @@
 """
 Handy tools for working with dates, including the ability to
-smartly use arbitrarily-formatted date time strings into python datetime objects
+smartly use arbitrarily-formatted date time strings into
+python datetime objects
 """
 from .timedelta import *
 from .timedeltaRanges import *
@@ -20,6 +21,7 @@ from .date import *
 from .time import *
 from .dateTime import *
 from .windowsFileTime import *
-date=Date
-time=Time
-datetime=DateTime
+from .months import *
+date=Date # noqa: F405
+time=Time # noqa: F405
+datetime=DateTime # noqa: F405

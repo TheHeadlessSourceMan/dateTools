@@ -140,9 +140,11 @@ class SparseDate:
         while True:
             if self.currentDate.weekday() in self.skipWeekdays:
                 pass
-            elif self.currentDate in self.holidays:
+            elif self.holidays is not None \
+                and self.currentDate in self.holidays:
                 pass
-            elif self.holidays.isHoliday(self.currentDate,self.daysOff):
+            elif hasattr(self.holidays,'isHoliday') \
+                and self.holidays.isHoliday(self.currentDate,self.daysOff):
                 pass
             else:
                 return

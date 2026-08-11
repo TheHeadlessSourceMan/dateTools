@@ -2,7 +2,12 @@
 Helpful constants for month and day abbreviations
 """
 
-MonthAbbrs=(
-    'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec')
-WeekdayAbbrs=(
+DaysOfWeekTwoLetter=(
     'su','mo','tu','we','th','fr','sa')
+DaysOfWeek=(
+    'Sunday','Monday','Tuesday','Wednesday',
+    'Thursday','Friday','Saturday')
+DaysOfWeekTwoLetter=(
+    'Su','Mo','Tu','We','Th','Fr','Sa')
+DaysOfWeekThreeLetter=(
+    'Sun','Mon','Tue','Wed','Thu','Fri','Sat')

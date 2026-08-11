@@ -50,7 +50,7 @@ def roundTime(
     time:datetime.time,
     toUnits:str,
     toUnitAmount:int=1
-    )->datetime.time:
+    )->datetime.datetime:
     """
     round the time to whatever is given
 
@@ -61,13 +61,13 @@ def roundTime(
     TODO: works with datetime.datetime, but what if they pass
         another kind of object in?
     """
-    def _roundToDecade(n,dec):
+    def _roundToDecade(n:float,dec:float)->float:
         return int(round(n/dec))*dec
     toUnits=toUnits.lower()
     if toUnits[-1]=='s': # remove plural ("days" => "day")
         toUnits=toUnits[0:-1]
     # now go and do it
-    vals={}
+    vals:typing.Dict[str,typing.Any]={}
     found=False
     for units in ('year','month','day','hour','minute','second'):
         if found:
@@ -79,8 +79,10 @@ def roundTime(
             found=True
     return datetime.datetime(**vals)
 
-def nextDay(fromDay:typing.Optional[datetime.date]=None
-    )->datetime.datetime:
+
+def nextDay(
+    fromDay:typing.Union[None,datetime.date,datetime.datetime]=None
+    )->datetime.date:
     """
     add one day to the given time
 
@@ -88,11 +90,14 @@ def nextDay(fromDay:typing.Optional[datetime.date]=None
     """
     if fromDay is None:
         fromDay=datetime.datetime.now()
+    if isinstance(fromDay,datetime.datetime):
+        fromDay=fromDay.date()
     return fromDay+ONE_DAY
 
 
-def previousDay(fromDay:typing.Optional[datetime.date]=None
-    )->datetime.datetime:
+def previousDay(
+    fromDay:typing.Union[None,datetime.date,datetime.datetime]=None
+    )->datetime.date:
     """
     subtract one day from the given time
 
@@ -100,13 +105,15 @@ def previousDay(fromDay:typing.Optional[datetime.date]=None
     """
     if fromDay is None:
         fromDay=datetime.datetime.now()
+    if isinstance(fromDay,datetime.datetime):
+        fromDay=fromDay.date()
     return fromDay-ONE_DAY
 
 
 def findDay(
     matchingFn:typing.Callable[[datetime.datetime],bool],
     previous:bool=False,
-    fromDay:typing.Optional[datetime.date]=None,
+    fromDay:typing.Union[None,datetime.date,datetime.datetime]=None,
     safetyNet:bool=True
     )->typing.Optional[datetime.date]:
     """
@@ -123,6 +130,8 @@ def findDay(
     """
     if fromDay is None:
         fromDay=datetime.datetime.now()
+    if not isinstance(fromDay,datetime.datetime):
+        fromDay=datetime.datetime.combine(fromDay,datetime.time())
     n=0
     while True:
         if matchingFn(fromDay):
@@ -139,7 +148,7 @@ def findDay(
 
 
 def toTime(
-    something:typing.Union[str,datetime.datetime,datetime.time]
+    something:typing.Union[None,str,datetime.datetime,datetime.time]
     )->datetime.time:
     """
     convert something to a time
@@ -179,11 +188,38 @@ def toTime(
         raise Exception(f'Unable to convert "{className}" to time.')
     return something
 
-
+InUnitsValuesFloats=typing.Literal[
+    'days','hours','minutes','seconds',
+    'd','h','m','s']
+InUnitsValues=typing.Literal[InUnitsValuesFloats,'hms']
+@typing.overload
 def timeDeltaInUnits(
-    timeDelta:datetime.timedelta,
-    inUnits:typing.Optional[str]=None
+    timeDelta:None,
+    inUnits:typing.Optional[InUnitsValues]=None
+    )->None:
+    ...
+@typing.overload
+def timeDeltaInUnits(
+    timeDelta:typing.Union[datetime.timedelta,str],
+    inUnits:None
+    )->datetime.timedelta:
+    ...
+@typing.overload
+def timeDeltaInUnits(
+    timeDelta:typing.Union[datetime.timedelta,str],
+    inUnits:typing.Literal['hms']
+    )->str:
+    ...
+@typing.overload
+def timeDeltaInUnits(
+    timeDelta:typing.Union[datetime.timedelta,str],
+    inUnits:typing.Literal[InUnitsValuesFloats]
     )->float:
+    ...
+def timeDeltaInUnits(
+    timeDelta:typing.Union[None,datetime.timedelta,str],
+    inUnits:typing.Optional[InUnitsValues]=None
+    )->typing.Union[None,float,datetime.timedelta,str]:
     """
     Convert a datetime.timedelta into the requested units
 
@@ -193,13 +229,15 @@ def timeDeltaInUnits(
         (very forgiving - anything that starts with 'd','h','m','s')
         if None, returns a datetime.timedelta
     """
+    if timeDelta is None:
+        return None
     if not isinstance(timeDelta,datetime.timedelta):
         timeDelta=toTimeDelta(timeDelta)
     if inUnits is None or not inUnits:
         return timeDelta
-    inUnits=inUnits.lower()
-    if inUnits=='hms':
-        seconds=timeDelta.total_seconds
+    formatConversion=str(inUnits).lower()
+    if formatConversion=='hms':
+        seconds=timeDelta.total_seconds()
         minutes=int(seconds/60) # also does a floor()
         seconds-=minutes*60
         hours=int(minutes/60)
@@ -207,16 +245,28 @@ def timeDeltaInUnits(
         days=int(hours/24)
         hours-=days
         return '%dd %dh %dm %fs'%(days,hours,minutes,seconds)
-    denom={'d':(60*60*24),'h':(60*60),'m':(60)}.get(inUnits[0],1)
+    c=formatConversion[0]
+    denom={'d':(60*60*24),'h':(60*60),'m':(60)}.get(c,1)
     return timeDelta.total_seconds()/denom
 
-
+@typing.overload
+def toTimeDelta(
+    something:typing.Union[datetime.timedelta,str]
+    )->datetime.timedelta:
+    ...
+@typing.overload
+def toTimeDelta(
+    something:None
+    )->None:
+    ...
 def toTimeDelta(
     something:typing.Union[None,datetime.timedelta,str]
-    )->datetime.timedelta:
+    )->typing.Optional[datetime.timedelta]:
     """
     convert something to a timedelta
     """
+    if something is None:
+        return None
     if isinstance(something,datetime.timedelta):
         return something
     if not isinstance(something,fuzzytime.FuzzyTime):
@@ -225,7 +275,7 @@ def toTimeDelta(
 
 
 def unitsInTimdelta(
-    units:float,
+    units:typing.Union[str,float],
     inUnits:typing.Optional[str]=None
     )->datetime.timedelta:
     """
@@ -242,14 +292,23 @@ def unitsInTimdelta(
         units=units.replace(',','')
         regex=r"""\s*[-]?\s*(?P<units>[0-9.]+)\s*(?P<inUnits>[a-z])?"""
         regex=re.compile(regex,re.IGNORECASE)
-        td=None
+        td:typing.Optional[datetime.timedelta]=None
         for m in regex.finditer(units):
             iu=m.group('inUnits')
             if iu is None:
                 iu=inUnits
-            td+=unitsInTimdelta(float(m.group('units')),iu)
+            unitTd=unitsInTimdelta(float(m.group('units')),iu)
+            if td is None:
+                td=unitTd
+            else:
+                td+=unitTd
+        if td is None:
+            raise Exception(f'Unable to convert "{units}" to timedelta')
         return td
-    paramName={'d':'days','h':'hours','m':'minutes'}.get(inUnits[0],'seconds')
+    if inUnits is None or not inUnits:
+        raise Exception('inUnits must be specified')
+    c=inUnits[0].lower() # type: ignore
+    paramName={'d':'days','h':'hours','m':'minutes'}.get(c,'seconds')
     return datetime.timedelta(**{paramName:units})
 
 
@@ -357,10 +416,12 @@ def secondsToColonFormat(
     return result+ampm
 
 
-def dayFromString(day:str)->int:
+def dayFromString(day:typing.Union[int,str])->int:
     """
     Get a weekday from a string
     """
+    if isinstance(day,int):
+        return day
     day=day.strip().upper()
     if day[0]=='S':
         if day[1]=='A':
@@ -388,7 +449,8 @@ numericFamConv=(100,1000,1000000,1000000000,1000000000)
 numerics=('zero','one','two','three','four','five','six','seven','eight',
     'nine','ten','eleven','twelve','thirteen','fourteen','fifteen',
     'sixteen','seventeen','eighteen','nineteen')
-decades=[None,None,'twenty','thirty','fourty','fifty',
+decades:typing.List[typing.Optional[str]]=[
+    None,None,'twenty','thirty','fourty','fifty',
     'sixty','seventy','eighty','ninety']
 numericPlaces=('none','first','second','third','fourth','fifth','sixth',
     'seventh','eighth','nineth','tenth','eleventh','twelfth')
@@ -406,7 +468,7 @@ def numberToText(
     raise NotImplementedError()
 
 def reWithoutNames(
-    regex:typing.Union[typing.Pattern,str]
+    regex:typing.Union[typing.Pattern[str],str]
     )->str:
     """
     strip names form the regex
@@ -418,7 +480,7 @@ def reWithoutNames(
     return regex
 
 _numberDetect=None
-def numberDetectRe()->typing.Pattern:
+def numberDetectRe()->typing.Pattern[str]:
     """
     return a regular expression capable of detecting numbers like
         fifteenth
@@ -437,8 +499,10 @@ def numberDetectRe()->typing.Pattern:
     global _numberDetect
     if _numberDetect is None:
         import re
-        nx=r"""\s*
-            ((?P<decade>"""+('|'.join(decades[2:]))+r""")(-\s)*)?
+        decadeStrings:str='|'.join(
+            typing.cast(typing.List[str],decades[2:]))
+        nx:str=r"""\s*
+            ((?P<decade>"""+decadeStrings+r""")(-\s)*)?
             ((
                 (?P<digits>[0-9][0-9,.]*)|
                 (
@@ -449,7 +513,7 @@ def numberDetectRe()->typing.Pattern:
                 )|
                 (?P<numericPlace>"""+('|'.join(numericPlaces))+r""")
             )(st|nd|rd|th)?)?"""
-        regex=r"""("""+nx+r"""\s*
+        regex:str=r"""("""+nx+r"""\s*
             (?P<fam>"""+('|'.join(numericFamilies))+r""")*
             (\s*and)?
         )"""
@@ -533,6 +597,8 @@ def cmdline(args:typing.Iterable[str])->int:
         print('  miscFunctions.py [options]')
         print('Options:')
         print('   --numberdecode=number ...... decode a number')
+        return -1
+    return 0
 
 
 if __name__=='__main__':

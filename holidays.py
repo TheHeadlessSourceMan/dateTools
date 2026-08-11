@@ -9,14 +9,14 @@ import os
 import re
 import datetime
 from paths import URLCompatible
-from jsonSerializeable import JsonSerializeable
+from jsonSerializable import JsonSerializable
 from dateTools import DateRange
 
 
 HERE=os.path.abspath(__file__).rsplit(os.sep,1)[0]+os.sep
 
 
-class Holiday(JsonSerializeable):
+class Holiday(JsonSerializable):
     """
     A single holiday
     """
@@ -35,7 +35,7 @@ class Holiday(JsonSerializeable):
         if date is not None:
             self.date=DateRange(date)
         self.dayOff:typing.Optional[str]=dayOff
-        JsonSerializeable.__init__(self)
+        JsonSerializable.__init__(self)
 
     @property
     def jsonObj(self)->typing.Dict[str,typing.Any]:
@@ -140,7 +140,7 @@ class Holiday(JsonSerializeable):
         return self.name
 
 
-class Holidays(JsonSerializeable):
+class Holidays(JsonSerializable):
     """
     This program allows opening lists of holidays and then selectively
     testing whether a given date is a holiday/day off
@@ -162,7 +162,7 @@ class Holidays(JsonSerializeable):
             localeString=currentLocale[0].lower().replace('_','-')
             filename='%sholidays%sholidays_%s.json'%(HERE,os.sep,localeString)
         self.holidays:typing.Dict[str,Holiday]={}
-        JsonSerializeable.__init__(self,filename)
+        JsonSerializable.__init__(self,filename)
 
     @property
     def jsonObj(self)->typing.Dict[str,typing.Any]:

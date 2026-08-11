@@ -12,7 +12,7 @@ TimeDeltaCompatible=typing.Union[
 class TimeDelta(datetime.timedelta):
     """
     Represents the difference between two times
-    
+
     lets you do cool things like:
 
     print(TimeDelta("30sec")+10) => "40sec"
@@ -295,6 +295,55 @@ class TimeDelta(datetime.timedelta):
     @totalBusinessDays.setter
     def totalBusinessDays(self,totalBusinessDays:float):
         self._shadowedTimedelta=datetime.timedelta(hours=totalBusinessDays*6.0)
+
+    def __add__(self,other:typing.Any)->"TimeDelta":
+        """
+        Add a timedelta to this TimeDelta object
+        """
+        if isinstance(other,datetime.timedelta):
+            return TimeDelta(self._shadowedTimedelta+other)
+        raise TypeError(
+            f'Unable to add {other.__class__.__name__} to TimeDelta')
+    def __radd__(self,other:typing.Any)->"TimeDelta":
+        """
+        Add a timedelta to this TimeDelta object
+        """
+        if isinstance(other,datetime.timedelta):
+            return TimeDelta(self._shadowedTimedelta+other)
+        raise TypeError(
+            f'Unable to add {other.__class__.__name__} to TimeDelta')
+    def __sub__(self,other:typing.Any)->"TimeDelta":
+        """
+        Subtract a timedelta from this TimeDelta object
+        """
+        if isinstance(other,datetime.timedelta):
+            return TimeDelta(self._shadowedTimedelta-other)
+        raise TypeError(
+            f'Unable to subtract {other.__class__.__name__} from TimeDelta')
+    def __rsub__(self,other:typing.Any)->"TimeDelta":
+        """
+        Subtract this TimeDelta object from a timedelta
+        """
+        if isinstance(other,datetime.timedelta):
+            return TimeDelta(other-self._shadowedTimedelta)
+        raise TypeError(
+            f'Unable to subtract TimeDelta from {other.__class__.__name__}')
+    def __mul__(self,other:typing.Any)->"TimeDelta":
+        """
+        Multiply a timedelta by a number
+        """
+        if isinstance(other,(int,float)):
+            return TimeDelta(self._shadowedTimedelta*other)
+        raise TypeError(
+            f'Unable to multiply {other.__class__.__name__} by TimeDelta')
+    def __div__(self,other:typing.Any)->"TimeDelta":
+        """
+        Divide a timedelta by a number
+        """
+        if isinstance(other,(int,float)):
+            return TimeDelta(self._shadowedTimedelta/other)
+        raise TypeError(
+            f'Unable to divide {other.__class__.__name__} by TimeDelta')
 
     def __repr__(self)->str:
         return self.toString()

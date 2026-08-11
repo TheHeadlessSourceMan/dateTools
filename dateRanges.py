@@ -9,8 +9,11 @@ import re
 from paths import URLCompatible
 from jsonSerializable import JsonSerializable
 from rangeTools import Range,Ranges
-import dateTools.miscFunctions as miscFunctions
-from dateTools.calendarNames import WeekdayAbbrs,MonthAbbrs
+from .calendarNames import DaysOfWeekTwoLetter
+from .months import MonthAbbrs,Months
+from .dateTime import asDateTime,DateTime,DateTimeCompatible
+from .miscFunctions import (
+    numberDetectRe,reWithoutNames,toTime,timeDeltaInUnits)
 
 
 RangeIndicatorReText=r"""(\s*(-|to|till|until|through)\s*)"""
@@ -96,7 +99,8 @@ def asDateRangeSimple(dateRange:DateRangeSimpleCompatible)->"DateRangeSimple":
         return DateRangeSimple(dateRange[0],dateRange[1])
     return DateRangeSimple(dateRange)
 
-class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
+class DateRangeSimple(
+    Range[ComparableDatetime,DateRangeSimpleCompatible]):
     """
     TODO: merge with DateRange below
     """
@@ -120,15 +124,30 @@ class DateRangeSimple(Range[ComparableDatetime,DateRangeSimpleCompatible]):
         :lowInclusive: is comparison >low or >=low
         :highInclusive: is comparison <high or <=high
         """
-        Range.__init__(self,
+        Range.__init__(self, # type: ignore
             low,high,step,center,
             lowInclusive,highInclusive,
             ComparableDatetime)
 
+
+DateRangeCompatible=typing.Union[
+    str,
+    "DateRange",
+    datetime.datetime,
+    typing.Tuple[datetime.datetime,datetime.datetime]]
+def asDateRange(dateRange:DateRangeCompatible):
+    """
+    if dateRange is a DateRange object, simply return it
+    otherwise create one on-the-fly
+    """
+    if isinstance(dateRange,DateRange):
+        return dateRange
+    return DateRange(dateRange)
+
+
 class DateRange(
     JsonSerializable,
-    Range[datetime.datetime,
-        typing.Union[str,datetime.datetime,datetime.date]]):
+    Range[DateTime,DateTimeCompatible]):
     """
     This tool allows dates formatted like:
         "tue-sat from 1:00 to 5:00PM"
@@ -139,14 +158,14 @@ class DateRange(
     TODO: once Range class is working, extend that!
     """
 
-    DECODER:typing.Optional[typing.Pattern]=None
-    def _CREATE_DECODER(self)->typing.Pattern:
-        weekdays='('+('|'.join(WeekdayAbbrs))+')[a-z]*'
+    DECODER:typing.Optional[typing.Pattern[str]]=None
+    def _CREATE_DECODER(self)->typing.Pattern[str]:
+        weekdays='('+('|'.join(DaysOfWeekTwoLetter))+')[a-z]*'
         months='('+('|'.join(MonthAbbrs))+')[a-z]*'
         time=r'[0-9]{1,2}:[0-9]{2}\s*(am|pm)?'
         rangeIndicator=RangeIndicatorReText+'?'
-        monthday=miscFunctions.reWithoutNames(miscFunctions.numberDetectRe())
-        regex=r"""
+        monthday=reWithoutNames(numberDetectRe())
+        regex:str=r"""
             (each|every|from|\s)*
             (
                 (?P<weekday>"""+weekdays+r""")
@@ -166,29 +185,30 @@ class DateRange(
                 ("""+rangeIndicator+r"""(?P<toTime>"""+time+"""))?
             )?"""
         #print(regex)
-        self.DECODER=re.compile(regex.replace('\n','').replace(' ',''),re.IGNORECASE) # noqa: E501 # pylint: disable=line-too-long
+        self.DECODER=re.compile( # type: ignore
+            regex.replace('\n','').replace(' ',''),re.IGNORECASE) # noqa: E501 # pylint: disable=line-too-long
         return self.DECODER
 
     def __init__(self,
-        dateRange:typing.Union[
-            None,str,
-            "DateRange",
-            datetime.datetime,
-            typing.Tuple[datetime.datetime,datetime.datetime]]=None,
+        dateRange:typing.Optional[DateRangeCompatible]=None,
         filename:typing.Optional[URLCompatible]=None,
-        jsonObj:typing.Union[str,typing.Dict,None]=None):
+        jsonObj:typing.Union[str,typing.Dict[str,typing.Any],None]=None):
         """ """
         if self.DECODER is None:
             self._CREATE_DECODER()
         # these will be set to defaults by self.assign() caling self.reset()
-        self.month=None
-        self.toMonth=None
-        self.monthDay=None
-        self.toMonthDay=None
-        self.weekday=None
-        self.toWeekday=None
-        self._time=None
-        self._toTime=None
+        self.month=1 # unlike datetime, we start with day 1
+        self.toMonth=12
+        self.monthDay=1 # unlike datetime, we start with day 1
+        self.toMonthDay=32 # allowed to be higher than the month can handle
+        self.weekday=0 # 0=Sunday,1=Monday, etc
+        self.toWeekday=6
+        self._time:typing.Optional[
+            typing.Union[datetime.time,datetime.datetime]
+        ]=None
+        self._toTime:typing.Optional[
+            typing.Union[datetime.time,datetime.datetime]
+        ]=None
         self.timeFormat="%I:%M%p"
         JsonSerializable.__init__(self,filename,jsonObj)
         Range[datetime.datetime,typing.Union[str,datetime.datetime]]\
@@ -215,6 +235,38 @@ class DateRange(
         self.time=datetime.time.min
         self.toTime=datetime.time.max
 
+    def strftime(self,fmt:str)->str:
+        """
+        Just like the regular strftime function
+        only the values are all used twice for
+        the fromTime and toTime. eg "%d .. %d"
+
+        Or, alternatively you can manually specify
+        for instance "%2d .. %1d" prints to_day .. from_day
+
+        NOTE: this is for convenience, but it may
+        be a little more efficient to do it manually like
+        f"{self.fromTime.strftime('%d')} .. {self.toTime.strftime('%d')}"
+        """
+        used:typing.Set[str]=set()
+        parts:typing.List[str]=[]
+        for part in fmt.split(r'%'):
+            if not parts:
+                parts.append(part)
+            elif part[0]=='%':
+                parts.append(part)
+            elif part[0]=='1':
+                parts.append(self.fromTime.strftime('%'+part[1:]))
+            elif part[0]=='2':
+                parts.append(self.toTime.strftime('%'+part[1:]))
+            else:
+                if part[0] in used:
+                    parts.append(self.toTime.strftime('%'+part))
+                else:
+                    parts.append(self.fromTime.strftime('%'+part))
+                    used.add(part[0])
+        return ''.join(parts)
+
     @property
     def time(self)->datetime.time:
         """
@@ -223,21 +275,57 @@ class DateRange(
         if self._time is None:
             if self._toTime is None:
                 return datetime.datetime.now().time()
+            if isinstance(self._toTime,datetime.datetime):
+                return self._toTime.time()
             return self._toTime
+        if isinstance(self._time,datetime.datetime):
+            return self._time.time()
         return self._time
     @time.setter
-    def time(self,time:datetime.time):
-        self._time=miscFunctions.toTime(time)
+    def time(self,
+        val:typing.Any):
+        self._time=toTime(val)
 
     @property
-    def toTime(self)->datetime.time:
+    def fromTime(self)->typing.Union[datetime.time,datetime.datetime]:
+        """
+        the starting time
+        """
+        if self._time is None:
+            return self.time
+        if isinstance(self._time,datetime.datetime):
+            return self._time
+        return self._time
+    @fromTime.setter
+    def fromTime(self,
+        val:typing.Any):
+        if isinstance(val,datetime.datetime):
+            self._time=val
+            return
+        if hasattr(val,'datetime'):
+            self._time=asDateTime(val).datetime # type: ignore[arg-type]
+            return
+        self.time=val
+
+    @property
+    def toTime(self)->typing.Union[datetime.time,datetime.datetime]:
         """
         the ending time
         """
+        if self._toTime is None:
+            return self.time
+        if isinstance(self._toTime,datetime.datetime):
+            return self._toTime
         return self._toTime
     @toTime.setter
-    def toTime(self,toTime:datetime.time):
-        self._toTime=miscFunctions.toTime(toTime)
+    def toTime(self,val:typing.Union[datetime.time,datetime.datetime]):
+        if isinstance(val,datetime.datetime):
+            self._toTime=val
+            return
+        if hasattr(val,'datetime'):
+            self._toTime=asDateTime(val).datetime # type: ignore[arg-type]
+            return
+        self._toTime=toTime(val)
 
     @property
     def jsonObj(self)->typing.Dict[str,typing.Any]:
@@ -247,7 +335,7 @@ class DateRange(
         it can also be assigned to json string
         which will go through assign() instead
         """
-        ret={}
+        ret:typing.Dict[str,typing.Any]={}
         if self.month>1 or self.toMonth<12:
             ret['month']=self.monthName
             if self.toMonth!=self.month:
@@ -282,11 +370,8 @@ class DateRange(
             else:
                 raise Exception('unknown field "%s"'%k)
 
-    def assign(self,
-        dateRange:typing.Union[
-            None,str,"DateRange",
-            datetime.datetime,
-            typing.Tuple[datetime.datetime,datetime.datetime]]
+    def assign(self, # type: ignore
+        dateRange:typing.Optional[DateRangeCompatible]
         )->None:
         """
         assign the value of this date range
@@ -300,49 +385,22 @@ class DateRange(
         if isinstance(dateRange,datetime.datetime):
             dateRange=(dateRange,dateRange)
         self.reset()
-        self.fromTime=dateRange[0]
-        self.toTime=dateRange[1]
+        self.fromTime=asDateTime(dateRange[0])
+        self.toTime=asDateTime(dateRange[1])
 
     def _assignRangeString(self,rangestring:str)->None:
         self.reset()
-        m=self.DECODER.match(rangestring)
+        if not rangestring:
+            return
+        rangeRegex=r"""(from)?\s*(?P<from>.*?)\s*(to|until|-+|.{2+})\s*(?P<to>.*)""" # noqa: E501 # pylint: disable=line-too-long
+        m=re.match(rangeRegex,rangestring,re.IGNORECASE)
         if m is None:
-            msg=f'ERR: unable to decode date range "{rangestring}"'
-            raise Exception(msg)
-        # decode months
-        month=m.group('month')
-        if month is not None:
-            self.month=MONTHLIST.index(month[0:3].lower())+1
-            monthDay=m.group('monthDay')
-            if monthDay is not None:
-                self.monthDay=int(miscFunctions.numberdecode(monthDay))
-                self.toMonthDay=self.monthDay
-            toMonth=m.group('toMonth')
-            if toMonth is None:
-                self.toMonth=self.month
-            else:
-                self.toMonth=MONTHLIST.index(toMonth[0:3].lower())
-                toMonthDay=m.group('toMonthDay')
-                if toMonthDay is not None:
-                    self.toMonthDay=int(miscFunctions.numberdecode(toMonthDay))
-        # decode days
-        weekday=m.group('weekday')
-        if weekday is not None:
-            self.weekday=WeekdayAbbrs.index(weekday[0:2].lower())
-            toWeekday=m.group('toWeekday')
-            if toWeekday is None:
-                self.toWeekday=self.weekday
-            else:
-                self.toWeekday=WeekdayAbbrs.index(toWeekday[0:2].lower())
-        # decode times
-        time=m.group('time')
-        if time is not None:
-            self.time=time
-            toTime=m.group('toTime')
-            if toTime is None:
-                self.toTime=time
-            else:
-                self.toTime=toTime
+            parsed=asDateTime(rangestring)
+            self.fromTime=parsed
+            self.toTime=parsed
+            return
+        self.fromTime=asDateTime(m.group('from'))
+        self.toTime=asDateTime(m.group('to'))
 
     def iterateDays(self)->typing.Generator["DateRange",None,None]:
         """
@@ -391,7 +449,7 @@ class DateRange(
 
     def next(self,
         afterDate:typing.Optional[datetime.date]=None
-        )->datetime.date:
+        )->typing.Optional[datetime.date]:
         """
         next occourance from the given date
 
@@ -444,34 +502,36 @@ class DateRange(
         if fromDate is None:
             fromDate=datetime.datetime.now()
         nextInstance=self.next(fromDate)
+        if nextInstance is None:
+            raise ValueError('no next occourance found')
         howLong=nextInstance-fromDate
-        return miscFunctions.timeDeltaInUnits(howLong,inUnits)
+        return timeDeltaInUnits(howLong,inUnits)
 
     @property
     def weekdayName(self)->str:
         """
         name of the from weekday
         """
-        return WeekdayAbbrs[self.weekday]
+        return DaysOfWeekTwoLetter[self.weekday]
     @property
     def toWeekdayName(self)->str:
         """
         name of the to weekday
         """
-        return WeekdayAbbrs[self.toWeekday]
+        return DaysOfWeekTwoLetter[self.toWeekday]
 
     @property
     def monthName(self)->str:
         """
         name of the from month
         """
-        return self.MONTHLIST[self.month-1]
+        return Months[self.month-1]
     @property
     def toMonthName(self)->str:
         """
         name of the to month
         """
-        return self.MONTHLIST[self.toMonth-1]
+        return Months[self.toMonth-1]
 
     @property
     def text(self)->str:
@@ -479,7 +539,7 @@ class DateRange(
         string representation of this object
         (setting this is the same as assign())
         """
-        ret=[]
+        ret:typing.List[str]=[]
         ret.append(self.weekdayName)
         if self.weekday!=self.toWeekday:
             ret.append('..')
@@ -518,7 +578,9 @@ class DateRange(
         return self.text
 DatetimeRange=DateRange
 
-class DateRanges(JsonSerializable,Ranges):
+
+class DateRanges(JsonSerializable,
+    Ranges[ComparableDatetime]):
     """
     A set of date range objects.
 
@@ -580,6 +642,10 @@ class DateRanges(JsonSerializable,Ranges):
         elif isinstance(ranges,datetime.datetime):
             self.dateRanges.append(DateRange(ranges))
         else:
+            ranges=typing.cast(
+                typing.Iterable[typing.Union[
+                    str,datetime.datetime,DateRange,"DateRanges"]],
+                ranges)
             for moreRanges in ranges:
                 self.append(moreRanges)
     add=append
@@ -604,7 +670,7 @@ class DateRanges(JsonSerializable,Ranges):
             fromDate=datetime.datetime.now()
         nextInstance=self.next(fromDate)
         howLong=nextInstance-fromDate
-        return miscFunctions.timeDeltaInUnits(howLong,inUnits)
+        return timeDeltaInUnits(howLong,inUnits)
 
     def next(self,
         fromDate:typing.Optional[datetime.date]=None
@@ -621,8 +687,12 @@ class DateRanges(JsonSerializable,Ranges):
         smallest=None
         for dr in self.dateRanges:
             nocc=dr.next(fromDate)
+            if nocc is None:
+                break
             if smallest is None or nocc<smallest:
                 smallest=nocc
+        if smallest is None:
+            raise ValueError('no next occourance found')
         return smallest
 
     @property
@@ -660,9 +730,15 @@ def cmdline(args:typing.Iterable[str])->int:
                 if arg[0] in ['-h','--help']:
                     printhelp=True
                 elif arg[0]=='--next':
-                    print(dr.next())
+                    if dr is None:
+                        print('ERR: no date ranges assigned yet')
+                    else:
+                        print(dr.next())
                 elif arg[0]=='--json':
-                    print(dr.json)
+                    if dr is None:
+                        print('ERR: no date ranges assigned yet')
+                    else:
+                        print(dr.json)
                 else:
                     print('ERR: unknown argument "'+arg[0]+'"')
             else:
@@ -672,6 +748,8 @@ def cmdline(args:typing.Iterable[str])->int:
         print('  dateRanges.py dateranges [options]')
         print('Options:')
         print('   --next ........... get next occourance of the date ranges')
+        return -1
+    return 0
 
 
 if __name__=='__main__':
