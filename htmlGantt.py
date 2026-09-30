@@ -3,7 +3,9 @@ Turn a list of DataRanges into a a very simple html gantt chart.
 """
 import typing
 
-from .dateRanges import DateRange, asDateRange,DateRangeCompatible
+from .dateRanges import (
+    DateRange,asDateRange,DateRangeCompatible)
+
 
 GanttEntryCompatible=typing.Union[
     "GanttEntry",typing.Tuple[str,DateRangeCompatible]]
@@ -28,7 +30,7 @@ class GanttEntry:
     def __init__(
         self,
         name:str,
-        range:DateRangeCompatible,
+        range:DateRangeCompatible, # pylint: disable=redefined-builtin
         color:str='blue',
         ):
         self.name:str=name
@@ -56,20 +58,22 @@ class GanttChart:
         """
         entries=self.entries
         minDate=min(entry.range.fromTime for entry in entries)
-        maxDate=max(entry.range.toTime for entry in entries)
-        dateSpan=maxDate-minDate
         html=['<table class="gantt-chart">']
         for entry in self.entries:
             html.append(f'<tr><td>{entry.name}</td>')
-            spaceBefore=dateSpan*entry.range.start.distance(minDate)
+            startOffset=entry.range.start-minDate
+            spaceBefore=float(startOffset.totalDays) # type: ignore
             size=entry.range.totalDays
             html.append(f'<td colspan={int(spaceBefore)}></td>')
-            html.append(f'<td colspan={int(size)} style="background-color:{entry.color}"></td>')
+            html.append(f'<td colspan={int(size)} style="background-color:{entry.color}"></td>') # noqa: E501 # pylint: disable=line-too-long
             html.append('</tr>')
         html.append('</table>')
         return '\n'.join(html)
 
     def append(self, entries:typing.Iterable[GanttEntryCompatible]):
+        """
+        Add more entries to the chart
+        """
         self.entries.extend(asGanttEntry(entry) for entry in entries)
     add=append
     extend=append

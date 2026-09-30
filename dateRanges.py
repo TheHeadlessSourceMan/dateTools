@@ -12,6 +12,7 @@ from rangeTools import Range,Ranges
 from .calendarNames import DaysOfWeekTwoLetter
 from .months import MonthAbbrs,Months
 from .dateTime import asDateTime,DateTime,DateTimeCompatible
+from .timedelta import TimeDelta,TimeDeltaCompatible
 from .miscFunctions import (
     numberDetectRe,reWithoutNames,timeDeltaInUnits)
 
@@ -146,6 +147,7 @@ def asDateRange(dateRange:DateRangeCompatible):
 
 
 class DateRange(
+    TimeDelta,
     JsonSerializable,
     Range[DateTime,DateTimeCompatible]):
     """
@@ -189,11 +191,22 @@ class DateRange(
             regex.replace('\n','').replace(' ',''),re.IGNORECASE) # noqa: E501 # pylint: disable=line-too-long
         return self.DECODER
 
+    def __new__(cls,
+        dateRange:typing.Optional[DateRangeCompatible]=None,
+        filename:typing.Optional[URLCompatible]=None,
+        jsonObj:typing.Union[str,typing.Dict[str,typing.Any],None]=None):
+        """
+        Override TimeDelta.__new__ signature so DateRange constructor arguments
+        are accepted without leaking TimeDelta-specific kwargs.
+        """
+        return super(TimeDelta,cls).__new__(cls)
+
     def __init__(self,
         dateRange:typing.Optional[DateRangeCompatible]=None,
         filename:typing.Optional[URLCompatible]=None,
         jsonObj:typing.Union[str,typing.Dict[str,typing.Any],None]=None):
         """ """
+        self._units:typing.Optional[str]=None
         if self.DECODER is None:
             self._CREATE_DECODER()
         # these will be set to defaults by self.assign() caling self.reset()
@@ -218,6 +231,12 @@ class DateRange(
         self.reset()
         if dateRange is not None:
             self.assign(dateRange)
+
+    def _rangeTimedelta(self)->TimeDelta:
+        """
+        Compute duration lazily from current range endpoints.
+        """
+        return TimeDelta(self.toTime.datetime-self.fromTime.datetime)
 
     def clear(self)->None:
         """
@@ -551,21 +570,133 @@ class DateRange(
         self.assign(text)
 
     @property
-    def duration(self)->datetime.timedelta:
+    def duration(self)->TimeDelta:
         """
         How long this range is
-        :rtype: datetime.timedelta
         """
-        return self.end-self.start
-    @property
-    def hours(self)->float:
-        """
-        total duration as hours
+        return self._rangeTimedelta()
 
-        :return: _description_
-        :rtype: float
+    @property
+    def timedelta(self)->TimeDelta:
         """
-        return self.duration.total_seconds()/(60*60)
+        TimeDelta-compatible duration proxy computed from end-start.
+        """
+        return self._rangeTimedelta()
+    @timedelta.setter
+    def timedelta(self,timedelta:TimeDeltaCompatible):
+        raise TypeError(
+            'DateRange.timedelta is read-only and derived from start/end')
+
+    @property
+    def totalSeconds(self)->float:
+        """
+        Entire duration in seconds, computed lazily from end-start.
+        """
+        return self._rangeTimedelta().total_seconds()
+    @totalSeconds.setter
+    def totalSeconds(self,totalSeconds:float):
+        raise TypeError(
+            'DateRange.totalSeconds is read-only and derived from start/end')
+
+    @property
+    def totalMinutes(self)->float:
+        """
+        Entire duration in minutes, computed lazily from end-start.
+        """
+        return self.totalSeconds/60.0
+    @totalMinutes.setter
+    def totalMinutes(self,totalMinutes:float):
+        raise TypeError(
+            'DateRange.totalMinutes is read-only and derived from start/end')
+
+    @property
+    def totalHours(self)->float:
+        """
+        Entire duration in hours, computed lazily from end-start.
+        """
+        return self.totalMinutes/60.0
+    @totalHours.setter
+    def totalHours(self,totalHours:float):
+        raise TypeError(
+            'DateRange.totalHours is read-only and derived from start/end')
+
+    @property
+    def totalBusinessDays(self)->float:
+        """
+        Entire duration in business days (6 hours per day).
+        """
+        return self.totalHours/6.0
+    @totalBusinessDays.setter
+    def totalBusinessDays(self,totalBusinessDays:float):
+        raise TypeError(
+            'DateRange.totalBusinessDays is read-only and '
+            'derived from start/end')
+
+    @property
+    def seconds(self)->float: # type: ignore
+        """
+        Seconds component of duration.
+        """
+        return self.timedelta.seconds%60
+    @seconds.setter
+    def seconds(self,seconds:float):
+        raise TypeError(
+            'DateRange.seconds is read-only and derived from start/end')
+
+    @property
+    def minutes(self)->int:
+        """
+        Minutes component of duration.
+        """
+        return int(self.totalMinutes%60)
+    @minutes.setter
+    def minutes(self,minutes:float):
+        raise TypeError(
+            'DateRange.minutes is read-only and derived from start/end')
+
+    def copy(self)->"DateRange":
+        """
+        Return a copy preserving DateRange semantics.
+        """
+        return DateRange((self.fromTime,self.toTime))
+
+    def toString(self,style:typing.Literal['in_units',':']='in_units')->str:
+        """
+        TimeDelta-compatible string formatting based on current end-start.
+        """
+        return TimeDelta(self._rangeTimedelta()).toString(style)
+
+    def total_seconds(self)->float:
+        """
+        datetime.timedelta-compatible method.
+        """
+        return self.totalSeconds
+
+    def _unsupportedTimedeltaMath(self,operator:str)->typing.NoReturn:
+        raise TypeError(
+            f'DateRange does not support TimeDelta operator "{operator}"; '
+            'use DateRange start/end operations instead')
+
+    def __add__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('+')
+
+    def __radd__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('+')
+
+    def __sub__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('-')
+
+    def __rsub__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('-')
+
+    def __mul__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('*')
+
+    def __div__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('/')
+
+    def __truediv__(self,other:typing.Any):
+        self._unsupportedTimedeltaMath('/')
 
     def __repr__(self)->str:
         """

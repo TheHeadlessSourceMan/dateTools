@@ -7,6 +7,8 @@ from .date import Date
 from .time import Time
 from .timestamp import (
     Timestamp,TimestampCompatible,asTimestamp)
+if typing.TYPE_CHECKING:
+    from .timedelta import TimeDelta
 
 
 DateTimeCompatible=typing.Union[
@@ -25,30 +27,80 @@ class HasDatetime(typing.Protocol):
     """
     datetime:"DateTimeCompatible"
 
-def asDateTime(dateTime:typing.Optional[DateTimeCompatible])->"DateTime":
+def asDateTime(
+    dateTime:typing.Optional[DateTimeCompatible]
+    )->"DateTime":
     """
     Always return a DateTime object.
     Create one if necessary.
     """
-    if type(dateTime) is DateTime:
+    # NOTE: cannot use isinstance() because that
+    # calls __instancecheck__ which uses this function.
+    # Thus creating an infinite loop.
+    if type(dateTime)==DateTime: # pylint: disable=unidiomatic-typecheck
         return dateTime
     return DateTime(dateTime)
+
+
+def asDateTimeUtc(
+    when:DateTimeCompatible
+    )->datetime.datetime:
+    """
+    Normalize anything date-like into a timezone-aware utc datetime.
+
+    Naive datetimes are assumed to already be utc.
+
+    Args:
+        when: A datetime, date, iso string, or unix timestamp.
+
+    Returns:
+        A timezone-aware datetime in utc.
+    """
+    value:typing.Any=when
+    if isinstance(value,(int,float)):
+        return datetime.datetime.fromtimestamp(
+            float(value),
+            datetime.timezone.utc)
+    if isinstance(value,str):
+        try:
+            value=asDateTime(value)
+        except Exception: # noqa: BLE001 - fall back to iso parsing
+            value=datetime.datetime.fromisoformat(value)
+    else:
+        value=datetime.datetime.fromisoformat(value)
+    if not isinstance(value,(datetime.datetime,datetime.date)):
+        # dateTools.DateTime and friends wrap a real datetime
+        for attributeName in ("datetime","dateTime","date"):
+            wrapped=getattr(value,attributeName,None)
+            if isinstance(wrapped,(datetime.datetime,datetime.date)):
+                value=wrapped
+                break
+    if isinstance(value,datetime.datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=datetime.timezone.utc)
+        return value.astimezone(datetime.timezone.utc)
+    if isinstance(value,datetime.date):
+        return datetime.datetime(
+            value.year,value.month,value.day,
+            tzinfo=datetime.timezone.utc)
+    raise ValueError(f'Cannot interpret {when!r} as a datetime')
+
 
 class DateTimeMeta(type):
     """
     Metaclass for declaring that DateTime is a datetime.datetime
     """
     def __instancecheck__(cls,instance:typing.Any)->bool:
-        return type(instance) is DateTime or isinstance(
-            instance,
-            (datetime.datetime,datetime.time,datetime.date,Date,Time),
-        )
+        return isinstance(instance,(
+            DateTime,datetime.datetime,datetime.time,datetime.date,Date,Time))
 class DateTime( # pylint: disable=inherit-non-class # type: ignore
     metaclass=DateTimeMeta):
     """
     Extended version of datetime.datetime object
     """
-    def __init__(self,dateTime:typing.Optional[DateTimeCompatible]=None):
+    def __init__(self,
+        dateTime:typing.Optional[DateTimeCompatible]=None):
+        """ """
         self._datetime:datetime.datetime
         if dateTime is not None:
             self.assign(dateTime)
@@ -59,11 +111,11 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
         """
         return asTimestamp(self._datetime.timestamp())
 
-    def strftime(self,format:str)->str:
+    def strftime(self,fmt:str)->str:
         """
         Return a string representation of this datetime object.
         """
-        return self._datetime.strftime(format)
+        return self._datetime.strftime(fmt)
 
     @property
     def datetime(self)->datetime.datetime:
@@ -114,7 +166,8 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
         Compare two DateTime objects
         """
         if isinstance(other,DateTime):
-            return (self._datetime>other._datetime)-(self._datetime<other._datetime)
+            return (self._datetime>other._datetime)\
+                -(self._datetime<other._datetime)
         if isinstance(other,datetime.datetime): # noqa: E501 # pylint: disable=no-member
             return (self._datetime>other)-(self._datetime<other)
         if isinstance(other,datetime.date): # noqa: E501 # pylint: disable=no-member
@@ -149,7 +202,8 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
         return self.__cmp__(other)>=0
 
     def __eq__(self,other:object)->bool:
-        if not isinstance(other,(DateTime,datetime.datetime,datetime.date,datetime.time)):
+        if not isinstance(other,(
+            DateTime,datetime.datetime,datetime.date,datetime.time)):
             return False
         return self.__cmp__(typing.cast(typing.Any,other))==0
 
@@ -159,28 +213,30 @@ class DateTime( # pylint: disable=inherit-non-class # type: ignore
     def __str__(self)->str:
         return str(self._datetime)
 
-    def __sub__(self,other:typing.Any)->datetime.timedelta:
+    def __sub__(self,other:typing.Any)->TimeDelta:
         """
         Subtract two DateTime objects
         """
         if isinstance(other,DateTime):
-            return self._datetime-other._datetime
+            return TimeDelta(self._datetime-other._datetime)
         if isinstance(other,datetime.datetime): # noqa: E501 # pylint: disable=no-member
-            return self._datetime-other
+            return TimeDelta(self._datetime-other)
         if isinstance(other,datetime.date): # noqa: E501 # pylint: disable=no-member
-            return self._datetime-datetime.datetime.combine( # noqa: E501 # pylint: disable=no-member
-                other,
-                datetime.time(),
-            )
+            return TimeDelta(
+                self._datetime\
+                -datetime.datetime.combine( # noqa: E501 # pylint: disable=no-member
+                    other,
+                    datetime.time()))
         if isinstance(other,datetime.time): # noqa: E501 # pylint: disable=no-member
-            return self._datetime-datetime.datetime.combine( # noqa: E501 # pylint: disable=no-member
-                datetime.date.today(),
-                other,
-            )
+            return TimeDelta(
+                self._datetime\
+                -datetime.datetime.combine( # noqa: E501 # pylint: disable=no-member
+                    datetime.date.today(),
+                    other))
         raise TypeError(
             f'Unable to subtract {other.__class__.__name__} from DateTime')
 
-    def __rsub__(self,other:typing.Any)->datetime.timedelta:
+    def __rsub__(self,other:typing.Any)->TimeDelta:
         """
         Subtract two DateTime objects
         """

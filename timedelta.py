@@ -282,6 +282,13 @@ class TimeDelta(datetime.timedelta):
         return str(s)
 
     @property
+    def totalDays(self)->float:
+        """
+        This entire duration in days
+        """
+        return self.totalHours/24
+
+    @property
     def totalBusinessDays(self)->float:
         """
         This entire duration in days.
